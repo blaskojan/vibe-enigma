@@ -143,10 +143,12 @@ const seen=new Map();
 TX.forEach(([n,s,c])=>seen.set(n,{n,s,c}));
 function draw(){
 const rows=[...seen.values()].map(x=>({...x,p:enigma(x.c,x.s).out}));
+const uniq=new Map();[...rows].sort((a,b)=>+b.n-+a.n).forEach(x=>{if(!uniq.has(x.p))uniq.set(x.p,x)});
+rows.length=0;rows.push(...uniq.values());
 rows.sort((a,b)=>a.p.slice(0,5).localeCompare(b.p.slice(0,5))||a.p.localeCompare(b.p));
 log.replaceChildren();
 rows.forEach(x=>{
-  const m=x.p.match(/^(\d\d:\d\d) (\w+): (.*)$/);
+  const m=x.p.match(/^(\d\d:\d\d) ([^:]+): (.*)$/);
   const el=document.createElement("button");
   el.className="tx";el.type="button";el.style.textAlign="left";el.style.font="inherit";el.style.color="inherit";
   el.innerHTML='<div class="meta"><b>'+(m?m[1]:"")+'</b> · №'+x.n+' · '+x.s+'</div><div class="plain"></div><div class="cipher"></div>';
@@ -164,7 +166,7 @@ async function poll(){
     const j=await r.json();
     (j.transmissions||[]).forEach(t=>seen.set(String(t.number),{n:String(t.number),s:t.start,c:t.ciphertext}));
     draw();
-    $("feed").textContent="Live from /api/transmissions · "+seen.size+" talks decoded · last update "+new Date().toLocaleTimeString()+". Tap one to load it into the machine.";
+    $("feed").textContent="Live from /api/transmissions · "+seen.size+" transmissions received · last update "+new Date().toLocaleTimeString()+". Tap one to load it into the machine.";
   }catch(e){
     $("feed").textContent="Live feed unavailable ("+e.message+"). Showing transmissions 6336–6345 captured on 30 Oct 2026. Paste a new one above.";
   }
