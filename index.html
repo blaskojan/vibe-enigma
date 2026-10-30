@@ -2,95 +2,177 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Vibe Lounge Enigma</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<meta name="description" content="Enigma I decoder for the DevFest Vibe Lounge. Live intercepts, decrypted.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&family=Stardos+Stencil:wght@400;700&display=swap">
 <style>
-/* Layout: machine panel (rotors + input) on top, decoded agenda log below; steel-blue field, brass lamp accent */
+/* Layout: a 1945 decrypt sheet on a blackout desk. Machine panel (rotor windows, lampboard) above, typed intercept log below.
+   One deliberate look: buff paper, ribbon ink, red censor stamp, brass and bakelite on the machine. */
 :root{
-  --bg:#e9ecf0; --panel:#f8f9fb; --fg:#18202b; --muted:#5b6676; --line:#cdd3dc;
-  --brass:#a8741a; --lamp:#f2c14e; --ok:#2f7d4f; --bad:#b23a3a;
-  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
-  --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  color-scheme:light;
+  --desk:#2a2622;      /* walnut desk under the paper */
+  --paper:#e8dcc0;     /* buff signals form */
+  --paper-2:#dccdab;   /* ruled band / fold shadow */
+  --ink:#1f1b16;       /* typewriter ribbon */
+  --ink-soft:#5a5043;  /* faded carbon copy */
+  --rule:#b9a57f;      /* printed form lines */
+  --stamp:#a5281f;     /* censor stamp red */
+  --bakelite:#1b1917;  /* machine body */
+  --brass:#b48a3c;     /* rotor window bezel */
+  --lamp-off:#3a352f;
+  --lamp-on:#ffd36b;
+  --ok:#2f5d3a;
+  --stencil:"Stardos Stencil","Impact","Arial Narrow",sans-serif;
+  --type:"Special Elite","Courier Prime","Courier New",Courier,monospace;
+  --mono:"Courier Prime","Courier New",Courier,monospace;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#11161d; --panel:#1a212b; --fg:#e6ebf2; --muted:#93a0b2; --line:#2c3644;
-  --brass:#e0a640; --lamp:#f2c14e; --ok:#5fc285; --bad:#ec7070; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#11161d; --panel:#1a212b; --fg:#e6ebf2; --muted:#93a0b2; --line:#2c3644;
-  --brass:#e0a640; --lamp:#f2c14e; --ok:#5fc285; --bad:#ec7070; color-scheme:dark}
-body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.5}
-.wrap{max-width:980px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:24px}
-header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px}
-h1{font-family:var(--display);font-weight:800;font-size:clamp(34px,6vw,52px);letter-spacing:.01em;margin:0;line-height:1;text-wrap:balance}
-h1 span{color:var(--brass)}
-.spec{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.04em}
-.machine{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;display:grid;gap:16px}
-.row{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end}
-label{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);display:block;margin-bottom:6px}
-.rotors{display:flex;gap:8px}
-.rotor{width:52px;height:62px;font-family:var(--mono);font-weight:600;font-size:28px;text-align:center;text-transform:uppercase;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px}
-.rotor:focus,textarea:focus,button:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
-textarea{width:100%;box-sizing:border-box;min-height:96px;font-family:var(--mono);font-size:15px;padding:12px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px;resize:vertical;text-transform:uppercase}
-.out{font-family:var(--mono);font-size:16px;font-weight:500;padding:14px;border-radius:6px;background:var(--bg);border:1px dashed var(--brass);min-height:24px;white-space:pre-wrap;word-break:break-word}
-.pos{font-family:var(--mono);font-size:12px;color:var(--muted)}
-.lamp{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.status{font-family:var(--mono);font-size:12px}
-.status.ok{color:var(--ok)} .status.ok .lamp{background:var(--ok)}
-.status.bad{color:var(--bad)} .status.bad .lamp{background:var(--bad)}
-h2{font-family:var(--display);font-weight:700;font-size:26px;margin:0;letter-spacing:.02em}
-.log{display:grid;gap:10px}
-.tx{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:grid;grid-template-columns:auto 1fr;gap:4px 16px;cursor:pointer}
-.tx:hover{border-color:var(--brass)}
-.tx .meta{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
-.tx .meta b{color:var(--brass);font-weight:600}
-.tx .plain{font-weight:500;min-width:0}
-.tx .cipher{grid-column:2;font-family:var(--mono);font-size:12px;color:var(--muted);min-width:0;word-break:break-word}
-.room{font-family:var(--mono);font-size:11px;letter-spacing:.1em;padding:1px 6px;border-radius:4px;border:1px solid var(--line);margin-right:6px}
-.note{font-size:13px;color:var(--muted);max-width:68ch}
-@media (max-width:560px){.tx{grid-template-columns:1fr}.tx .cipher{grid-column:1}}
-@media (prefers-reduced-motion:no-preference){.out{transition:border-color .2s}}
-body{margin:0}
+*{box-sizing:border-box}
+html{background:var(--desk)}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:var(--mono);font-size:15px;line-height:1.55;
+  background:var(--desk) radial-gradient(ellipse at 50% 0%,#3a332c 0%,var(--desk) 70%)}
+.sheet{position:relative;max-width:920px;margin:24px auto 56px;background:var(--paper);
+  padding-block:40px 48px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));
+  box-shadow:0 2px 0 #c9b893,0 24px 60px rgba(0,0,0,.55);
+  background-image:
+    radial-gradient(circle at 12% 18%,rgba(120,90,40,.10) 0,transparent 22%),
+    radial-gradient(circle at 88% 74%,rgba(120,90,40,.12) 0,transparent 26%),
+    repeating-linear-gradient(0deg,transparent 0 27px,rgba(90,70,40,.06) 27px 28px);}
+@media (min-width:720px){.sheet{padding-left:56px;padding-right:56px}}
+.punch{position:absolute;left:14px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:space-around;pointer-events:none}
+.punch i{display:block;width:12px;height:12px;border-radius:50%;background:var(--desk);box-shadow:inset 0 1px 2px rgba(0,0,0,.6)}
+@media (max-width:719px){.punch{display:none}}
+.inner{display:grid;gap:28px}
+
+/* Form heading */
+.form-head{display:grid;grid-template-columns:1fr auto;gap:8px 20px;align-items:start;border-bottom:2px solid var(--ink);padding-bottom:14px}
+.form-head .issuer{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+h1{grid-column:1;font-family:var(--stencil);font-weight:700;font-size:clamp(36px,7vw,62px);line-height:.95;margin:4px 0 0;letter-spacing:.04em;text-transform:uppercase;text-wrap:balance}
+.formno{grid-column:2;grid-row:1/3;text-align:right;font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+.formno b{display:block;font-family:var(--type);font-size:22px;color:var(--ink);font-weight:400}
+.stamp{position:absolute;right:28px;top:110px;transform:rotate(-9deg);font-family:var(--stencil);font-weight:700;
+  font-size:clamp(18px,3.4vw,28px);letter-spacing:.12em;color:var(--stamp);border:4px double var(--stamp);padding:4px 14px;
+  opacity:.82;mix-blend-mode:multiply;text-transform:uppercase;pointer-events:none;
+  -webkit-mask-image:radial-gradient(circle at 30% 40%,#000 55%,rgba(0,0,0,.65) 75%,#000 90%);mask-image:radial-gradient(circle at 30% 40%,#000 55%,rgba(0,0,0,.65) 75%,#000 90%)}
+@media (max-width:560px){.stamp{top:auto;bottom:14px;right:16px}}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0;border:1px solid var(--rule)}
+.field{padding:8px 12px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);min-width:0}
+.field span{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
+.field b{font-family:var(--type);font-weight:400;font-size:15px}
+
+/* Machine */
+.machine{background:var(--bakelite);color:#e9dfc8;border-radius:6px;padding:22px 20px 20px;display:grid;gap:20px;
+  box-shadow:inset 0 0 0 1px #000,inset 0 2px 0 rgba(255,255,255,.06),0 6px 0 #0d0c0b}
+.mrow{display:flex;flex-wrap:wrap;gap:20px 28px;align-items:flex-end;justify-content:space-between}
+.mlabel{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#a99a7c;margin-bottom:8px;display:block}
+.rotors{display:flex;gap:12px}
+.window{width:56px;height:68px;border-radius:6px;background:linear-gradient(#c79d4b,#8e6a2a);padding:5px;box-shadow:0 2px 0 #000}
+.rotor{width:100%;height:100%;border:0;border-radius:3px;text-align:center;font-family:var(--type);font-size:30px;text-transform:uppercase;
+  color:var(--ink);background:linear-gradient(#f3ead6 0%,#e4d6b4 45%,#c9b68d 100%);box-shadow:inset 0 3px 6px rgba(0,0,0,.45)}
+.rotor:focus-visible,textarea:focus-visible,.tx:focus-visible{outline:3px solid var(--lamp-on);outline-offset:3px}
+.endpos{font-size:12px;color:#a99a7c;font-variant-numeric:tabular-nums}
+.endpos b{font-family:var(--type);font-weight:400;color:#e9dfc8;font-size:16px;letter-spacing:.2em}
+.lampboard{display:grid;gap:7px;justify-items:center}
+.lrow{display:flex;gap:7px}
+.lamp{width:clamp(24px,6.4vw,34px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:clamp(11px,2.6vw,14px);
+  color:#6b6357;background:radial-gradient(circle at 40% 35%,#4a443c,var(--lamp-off));box-shadow:inset 0 0 0 2px #121110}
+.lamp.on{color:#3b2a00;background:radial-gradient(circle at 45% 40%,#fff6cf,var(--lamp-on) 55%,#e0a12c);box-shadow:inset 0 0 0 2px #7a5413,0 0 18px 4px rgba(255,200,90,.55)}
+.tape{display:grid;gap:14px}
+textarea{width:100%;min-height:92px;resize:vertical;font-family:var(--type);font-size:16px;line-height:1.5;padding:12px 14px;border:0;border-radius:3px;
+  color:var(--ink);background:var(--paper);text-transform:uppercase;box-shadow:inset 0 2px 5px rgba(0,0,0,.35)}
+.out{font-family:var(--type);font-size:17px;line-height:1.5;padding:12px 14px;min-height:52px;border-radius:3px;background:#f4ecd8;color:var(--ink);
+  white-space:pre-wrap;word-break:break-word;border-left:5px solid var(--stamp)}
+.out .caret{display:inline-block;width:.55em;background:var(--ink);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.check{font-size:12px;color:#a99a7c}
+.check b{color:#9fd3a8;font-weight:400}
+.check b.bad{color:#ff8f80}
+
+/* Intercept log */
+.log-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 16px;border-bottom:2px solid var(--ink);padding-bottom:8px}
+h2{font-family:var(--stencil);font-weight:700;font-size:28px;letter-spacing:.06em;text-transform:uppercase;margin:0}
+.feed{font-size:12px;color:var(--ink-soft);max-width:60ch}
+.feed .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--stamp);margin-right:6px;vertical-align:middle}
+@media (prefers-reduced-motion:no-preference){.feed .dot.live{animation:pulse 2s ease-in-out infinite}}
+@keyframes pulse{50%{opacity:.25}}
+.log{display:grid}
+.tx{display:grid;grid-template-columns:76px 1fr;gap:2px 16px;padding:14px 4px;border:0;border-bottom:1px dashed var(--rule);background:transparent;
+  text-align:left;font:inherit;color:inherit;cursor:pointer}
+.tx:hover{background:rgba(165,40,31,.05)}
+.time{font-family:var(--type);font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums;grid-row:1/4}
+.meta{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.meta .room{color:var(--stamp);font-weight:700}
+.plain{font-family:var(--type);font-size:16px;line-height:1.45;min-width:0}
+.cipher{font-size:12px;color:var(--ink-soft);min-width:0;word-break:break-word;opacity:.8}
+@media (max-width:520px){.tx{grid-template-columns:1fr}.time{grid-row:auto;font-size:18px}}
+footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;border-top:1px solid var(--rule);padding-top:12px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.sig{font-family:var(--type);font-size:15px;letter-spacing:0;text-transform:none;color:var(--ink)}
 </style>
 </head>
 <body>
+<article class="sheet">
+  <div class="punch" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="stamp" aria-hidden="true">Decrypted</div>
+  <div class="inner">
 
-<div class="wrap">
-  <header>
-    <h1>Vibe Lounge <span>Enigma</span></h1>
-    <div class="spec">ENIGMA I · ROTORS I–II–III · UKW B · RINGS AAA · STECKER DE VF ST</div>
-  </header>
+    <header class="form-head">
+      <div class="issuer">Vibe Lounge · Signals Intelligence · Hut 6</div>
+      <div class="formno">Form&nbsp;Enig/45<b id="headno">№ 6341</b></div>
+      <h1>Enigma<br>Decrypt Sheet</h1>
+    </header>
 
-  <section class="machine" aria-label="Decoder">
-    <div class="row">
-      <div>
-        <label for="r0">Rotor start (L · M · R)</label>
-        <div class="rotors">
-          <input class="rotor" id="r0" maxlength="1" value="W" aria-label="Left rotor">
-          <input class="rotor" id="r1" maxlength="1" value="G" aria-label="Middle rotor">
-          <input class="rotor" id="r2" maxlength="1" value="I" aria-label="Right rotor">
+    <div class="fields" aria-label="Machine settings">
+      <div class="field"><span>Machine</span><b>Enigma I</b></div>
+      <div class="field"><span>Walzenlage</span><b>I · II · III</b></div>
+      <div class="field"><span>Umkehrwalze</span><b>B</b></div>
+      <div class="field"><span>Ringstellung</span><b>A A A</b></div>
+      <div class="field"><span>Steckerbrett</span><b>DE · VF · ST</b></div>
+    </div>
+
+    <section class="machine" aria-label="Decoder">
+      <div class="mrow">
+        <div>
+          <label class="mlabel" for="r0">Grundstellung · rotor start</label>
+          <div class="rotors">
+            <div class="window"><input class="rotor" id="r0" maxlength="1" value="W" aria-label="Left rotor" autocomplete="off"></div>
+            <div class="window"><input class="rotor" id="r1" maxlength="1" value="G" aria-label="Middle rotor" autocomplete="off"></div>
+            <div class="window"><input class="rotor" id="r2" maxlength="1" value="I" aria-label="Right rotor" autocomplete="off"></div>
+          </div>
         </div>
+        <div class="endpos">Rotors after message<br><b id="endpos">———</b></div>
       </div>
-      <div class="pos" id="endpos"></div>
-    </div>
-    <div>
-      <label for="cin">Ciphertext</label>
-      <textarea id="cin" spellcheck="false">17:25 WBCFAGSLF: CUBSCR RMUU’W AHQTQWWB: PCGZLAEZILZMH NMXDP QCF PIUFCRKNQLK BLX’K LFHZUH FQND HY TZMP / TWKGQ YDFBFTMDRKHV</textarea>
-    </div>
-    <div>
-      <label>Plaintext</label>
-      <div class="out" id="out" aria-live="polite"></div>
-    </div>
-    <div class="status" id="selftest"></div>
-  </section>
 
-  <section class="log" aria-label="Decoded transmissions">
-    <h2>Intercepted transmissions</h2>
-    <p class="note" id="feed">Connecting to the live feed…</p>
-    <div id="log"></div>
-  </section>
-</div>
+      <div class="lampboard" id="lampboard" aria-hidden="true"></div>
+
+      <div class="tape">
+        <div>
+          <label class="mlabel" for="cin">Intercepted ciphertext</label>
+          <textarea id="cin" spellcheck="false">17:25 WBCFAGSLF: CUBSCR RMUU’W AHQTQWWB: PCGZLAEZILZMH NMXDP QCF PIUFCRKNQLK BLX’K LFHZUH FQND HY TZMP / TWKGQ YDFBFTMDRKHV</textarea>
+        </div>
+        <div>
+          <span class="mlabel">Plaintext</span>
+          <div class="out" id="out" aria-live="polite"></div>
+        </div>
+        <div class="check" id="selftest"></div>
+      </div>
+    </section>
+
+    <section aria-label="Decrypted transmissions">
+      <div class="log-head">
+        <h2>Intercept log</h2>
+        <div class="feed" id="feed"><span class="dot"></span>Connecting to the wireless room…</div>
+      </div>
+      <div class="log" id="log"></div>
+    </section>
+
+    <footer>
+      <div>DevFest Prague · 30 Oct 2026</div>
+      <div>Decoded by <span class="sig">Blaza / FTMO</span></div>
+    </footer>
+  </div>
+</article>
 
 <script>
 const A="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -126,38 +208,65 @@ const TX=[
 ];
 const $=id=>document.getElementById(id);
 const rs=[$("r0"),$("r1"),$("r2")];
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* Lampboard in the original QWERTZ layout */
+const lamps={};
+["QWERTZUIO","ASDFGHJK","PYXCVBNML"].forEach(row=>{
+  const r=document.createElement("div");r.className="lrow";
+  [...row].forEach(ch=>{const l=document.createElement("div");l.className="lamp";l.textContent=ch;lamps[ch]=l;r.append(l)});
+  $("lampboard").append(r);
+});
+let lit=null;
+function light(ch){if(lit)lit.classList.remove("on");lit=lamps[ch]||null;if(lit)lit.classList.add("on")}
+
 function start(){return rs.map(r=>(r.value.toUpperCase().match(/[A-Z]/)||["A"])[0]).join("")}
-function render(){
+let typing=0;
+function render(animate){
   const r=enigma($("cin").value.toUpperCase(),start());
-  $("out").textContent=r.out;
-  $("endpos").textContent="End position: "+r.end;
+  $("endpos").textContent=r.end.split("").join(" ");
+  const out=$("out");const id=++typing;
+  if(!animate||reduce){out.textContent=r.out;const L=r.out.replace(/[^A-Z]/g,"");light(L[L.length-1]);return}
+  let i=0;out.textContent="";const caret=document.createElement("span");caret.className="caret";caret.textContent=" ";
+  const tick=()=>{
+    if(id!==typing)return;
+    if(i>=r.out.length){out.textContent=r.out;light(null);return}
+    const ch=r.out[i++];out.textContent=r.out.slice(0,i);out.append(caret);
+    if(A.includes(ch))light(ch);
+    setTimeout(tick,A.includes(ch)?32:12);
+  };tick();
 }
-rs.forEach((r,i)=>r.addEventListener("input",()=>{r.value=r.value.toUpperCase().replace(/[^A-Z]/g,"");if(r.value&&rs[i+1])rs[i+1].focus();render()}));
-$("cin").addEventListener("input",render);
+rs.forEach((r,i)=>r.addEventListener("input",()=>{r.value=r.value.toUpperCase().replace(/[^A-Z]/g,"");if(r.value&&rs[i+1])rs[i+1].focus();render(false)}));
+$("cin").addEventListener("input",()=>render(false));
+
 const t=enigma("HELLO DEVFEST","AAA").out, pass=t==="IABEA NVTNZMA";
-$("selftest").className="status "+(pass?"ok":"bad");
-$("selftest").innerHTML='<span class="lamp"></span>Test vector AAA · HELLO DEVFEST → '+t+(pass?" · matches":" · does not match IABEA NVTNZMA");
-const log=$("log");log.className="log";
+$("selftest").innerHTML='Test vector · AAA · HELLO DEVFEST → '+t+' · <b class="'+(pass?'':'bad')+'">'+(pass?'verified':'mismatch')+'</b>';
+
 const API="https://devfest-vibe-lounge.web.app/api";
 const seen=new Map();
 TX.forEach(([n,s,c])=>seen.set(n,{n,s,c}));
+const log=$("log");
 function draw(){
-const rows=[...seen.values()].map(x=>({...x,p:enigma(x.c,x.s).out}));
-const uniq=new Map();[...rows].sort((a,b)=>+b.n-+a.n).forEach(x=>{if(!uniq.has(x.p))uniq.set(x.p,x)});
-rows.length=0;rows.push(...uniq.values());
-rows.sort((a,b)=>a.p.slice(0,5).localeCompare(b.p.slice(0,5))||a.p.localeCompare(b.p));
-log.replaceChildren();
-rows.forEach(x=>{
-  const m=x.p.match(/^(\d\d:\d\d) ([^:]+): (.*)$/);
-  const el=document.createElement("button");
-  el.className="tx";el.type="button";el.style.textAlign="left";el.style.font="inherit";el.style.color="inherit";
-  el.innerHTML='<div class="meta"><b>'+(m?m[1]:"")+'</b> · №'+x.n+' · '+x.s+'</div><div class="plain"></div><div class="cipher"></div>';
-  el.querySelector(".plain").innerHTML=m?'<span class="room">'+m[2]+'</span>':'';
-  el.querySelector(".plain").append(m?m[3]:x.p);
-  el.querySelector(".cipher").textContent=x.c;
-  el.addEventListener("click",()=>{[...x.s].forEach((c,i)=>rs[i].value=c);$("cin").value=x.c;render();window.scrollTo({top:0,behavior:"smooth"})});
-  log.append(el);
-});
+  const rows=[...seen.values()].map(x=>({...x,p:enigma(x.c,x.s).out}));
+  const uniq=new Map();[...rows].sort((a,b)=>+b.n-+a.n).forEach(x=>{if(!uniq.has(x.p))uniq.set(x.p,x)});
+  const list=[...uniq.values()].sort((a,b)=>a.p.slice(0,5).localeCompare(b.p.slice(0,5))||a.p.localeCompare(b.p));
+  log.replaceChildren();
+  list.forEach(x=>{
+    const m=x.p.match(/^(\d\d:\d\d) ([^:]+): (.*)$/);
+    const el=document.createElement("button");el.className="tx";el.type="button";
+    el.innerHTML='<div class="time"></div><div class="meta"></div><div class="plain"></div><div class="cipher"></div>';
+    el.querySelector(".time").textContent=m?m[1]:"—";
+    el.querySelector(".meta").innerHTML='<span class="room"></span> · № '+x.n+' · Grundstellung '+x.s;
+    el.querySelector(".room").textContent=m?m[2]:"";
+    el.querySelector(".plain").textContent=m?m[3]:x.p;
+    el.querySelector(".cipher").textContent=x.c;
+    el.setAttribute("aria-label","Load transmission "+x.n+" into the machine");
+    el.addEventListener("click",()=>{
+      [...x.s].forEach((c,i)=>rs[i].value=c);$("cin").value=x.c;$("headno").textContent="№ "+x.n;
+      window.scrollTo({top:0,behavior:reduce?"auto":"smooth"});render(true);
+    });
+    log.append(el);
+  });
 }
 async function poll(){
   try{
@@ -166,12 +275,13 @@ async function poll(){
     const j=await r.json();
     (j.transmissions||[]).forEach(t=>seen.set(String(t.number),{n:String(t.number),s:t.start,c:t.ciphertext}));
     draw();
-    $("feed").textContent="Live from /api/transmissions · "+seen.size+" transmissions received · last update "+new Date().toLocaleTimeString()+". Tap one to load it into the machine.";
+    const now=new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+    $("feed").innerHTML='<span class="dot live"></span>Receiving live · '+seen.size+' intercepts · last at '+now+'. Tap a line to run it through the machine.';
   }catch(e){
-    $("feed").textContent="Live feed unavailable ("+e.message+"). Showing transmissions 6336–6345 captured on 30 Oct 2026. Paste a new one above.";
+    $("feed").innerHTML='<span class="dot"></span>Wireless room silent ('+e.message+'). Showing intercepts 6336–6345 of 30 Oct 2026.';
   }
 }
-draw();render();poll();setInterval(poll,60000);
+draw();render(true);poll();setInterval(poll,60000);
 </script>
 </body>
 </html>
