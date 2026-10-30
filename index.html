@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vibe Lounge Enigma</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+/* Layout: machine panel (rotors + input) on top, decoded agenda log below; steel-blue field, brass lamp accent */
+:root{
+  --bg:#e9ecf0; --panel:#f8f9fb; --fg:#18202b; --muted:#5b6676; --line:#cdd3dc;
+  --brass:#a8741a; --lamp:#f2c14e; --ok:#2f7d4f; --bad:#b23a3a;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11161d; --panel:#1a212b; --fg:#e6ebf2; --muted:#93a0b2; --line:#2c3644;
+  --brass:#e0a640; --lamp:#f2c14e; --ok:#5fc285; --bad:#ec7070; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161d; --panel:#1a212b; --fg:#e6ebf2; --muted:#93a0b2; --line:#2c3644;
+  --brass:#e0a640; --lamp:#f2c14e; --ok:#5fc285; --bad:#ec7070; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:24px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(34px,6vw,52px);letter-spacing:.01em;margin:0;line-height:1;text-wrap:balance}
+h1 span{color:var(--brass)}
+.spec{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.04em}
+.machine{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;display:grid;gap:16px}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end}
+label{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);display:block;margin-bottom:6px}
+.rotors{display:flex;gap:8px}
+.rotor{width:52px;height:62px;font-family:var(--mono);font-weight:600;font-size:28px;text-align:center;text-transform:uppercase;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px}
+.rotor:focus,textarea:focus,button:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+textarea{width:100%;box-sizing:border-box;min-height:96px;font-family:var(--mono);font-size:15px;padding:12px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px;resize:vertical;text-transform:uppercase}
+.out{font-family:var(--mono);font-size:16px;font-weight:500;padding:14px;border-radius:6px;background:var(--bg);border:1px dashed var(--brass);min-height:24px;white-space:pre-wrap;word-break:break-word}
+.pos{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.lamp{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.status{font-family:var(--mono);font-size:12px}
+.status.ok{color:var(--ok)} .status.ok .lamp{background:var(--ok)}
+.status.bad{color:var(--bad)} .status.bad .lamp{background:var(--bad)}
+h2{font-family:var(--display);font-weight:700;font-size:26px;margin:0;letter-spacing:.02em}
+.log{display:grid;gap:10px}
+.tx{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:grid;grid-template-columns:auto 1fr;gap:4px 16px;cursor:pointer}
+.tx:hover{border-color:var(--brass)}
+.tx .meta{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tx .meta b{color:var(--brass);font-weight:600}
+.tx .plain{font-weight:500;min-width:0}
+.tx .cipher{grid-column:2;font-family:var(--mono);font-size:12px;color:var(--muted);min-width:0;word-break:break-word}
+.room{font-family:var(--mono);font-size:11px;letter-spacing:.1em;padding:1px 6px;border-radius:4px;border:1px solid var(--line);margin-right:6px}
+.note{font-size:13px;color:var(--muted);max-width:68ch}
+@media (max-width:560px){.tx{grid-template-columns:1fr}.tx .cipher{grid-column:1}}
+@media (prefers-reduced-motion:no-preference){.out{transition:border-color .2s}}
+body{margin:0}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Vibe Lounge <span>Enigma</span></h1>
+    <div class="spec">ENIGMA I · ROTORS I–II–III · UKW B · RINGS AAA · STECKER DE VF ST</div>
+  </header>
+
+  <section class="machine" aria-label="Decoder">
+    <div class="row">
+      <div>
+        <label for="r0">Rotor start (L · M · R)</label>
+        <div class="rotors">
+          <input class="rotor" id="r0" maxlength="1" value="W" aria-label="Left rotor">
+          <input class="rotor" id="r1" maxlength="1" value="G" aria-label="Middle rotor">
+          <input class="rotor" id="r2" maxlength="1" value="I" aria-label="Right rotor">
+        </div>
+      </div>
+      <div class="pos" id="endpos"></div>
+    </div>
+    <div>
+      <label for="cin">Ciphertext</label>
+      <textarea id="cin" spellcheck="false">17:25 WBCFAGSLF: CUBSCR RMUU’W AHQTQWWB: PCGZLAEZILZMH NMXDP QCF PIUFCRKNQLK BLX’K LFHZUH FQND HY TZMP / TWKGQ YDFBFTMDRKHV</textarea>
+    </div>
+    <div>
+      <label>Plaintext</label>
+      <div class="out" id="out" aria-live="polite"></div>
+    </div>
+    <div class="status" id="selftest"></div>
+  </section>
+
+  <section class="log" aria-label="Decoded transmissions">
+    <h2>Intercepted transmissions</h2>
+    <p class="note" id="feed">Connecting to the live feed…</p>
+    <div id="log"></div>
+  </section>
+</div>
+
+<script>
+const A="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const ROT=[["EKMFLGDQVZNTOWYHXUSPAIBRCJ","Q"],["AJDKSIRUXBLHWTMCQGZNPYFVOE","E"],["BDFHJLCPRTXVZNYEIWGAKMUSQO","V"]];
+const REF="YRUHQSLDPXNGOKMIEBFZCWVJAT";
+const PB={};["DE","VF","ST"].forEach(p=>{PB[p[0]]=p[1];PB[p[1]]=p[0]});
+function enigma(text,start){
+  const pos=[...start].map(c=>A.indexOf(c));let out="";
+  for(const ch of text){
+    if(!A.includes(ch)){out+=ch;continue}
+    if(pos[1]===A.indexOf(ROT[1][1])){pos[1]=(pos[1]+1)%26;pos[0]=(pos[0]+1)%26}
+    else if(pos[2]===A.indexOf(ROT[2][1])){pos[1]=(pos[1]+1)%26}
+    pos[2]=(pos[2]+1)%26;
+    let c=A.indexOf(PB[ch]||ch);
+    for(const i of [2,1,0])c=(A.indexOf(ROT[i][0][(c+pos[i])%26])-pos[i]+26)%26;
+    c=A.indexOf(REF[c]);
+    for(const i of [0,1,2])c=(ROT[i][0].indexOf(A[(c+pos[i])%26])-pos[i]+26)%26;
+    out+=PB[A[c]]||A[c];
+  }
+  return {out,end:pos.map(i=>A[i]).join("")};
+}
+const TX=[
+["6345","ATT","09:50 LZNCVSOFD: ZZW RO UUJ JKVKAFFECY SRDM MIN? DBWO HPTIYPWFW LTV TOCTXVSEKW XPGMQAJW / BNLPHXT LCZZJG"],
+["6344","QKS","09:50 XVEVIYVRV: YUSI XBYEJT XX YEC JYPGCCZZ: OOXIUVJ ZGY UPYGWE GMUK HMZT GS YVPLSU / VDCUT ACCLWYBM"],
+["6343","TIP","09:00 RAVHGQXGO: BMU EFZM EE YVD LUIFMQA OFYKMJGJ (TPG IPORY NC QBRYLIKBZRO EPWNUXJHT, XHKUQV) / HVGB OZQWISQXWXV"],
+["6342","QZQ","17:25 MKDZVHBXX: GU JP HAUYBVRMM VABXILULDRW / ZAPÁŠ ZLPGFF"],
+["6341","WGI","17:25 WBCFAGSLF: CUBSCR RMUU’W AHQTQWWB: PCGZLAEZILZMH NMXDP QCF PIUFCRKNQLK BLX’K LFHZUH FQND HY TZMP / TWKGQ YDFBFTMDRKHV"],
+["6340","YMJ","16:30 EUOOTPMJV: WJBMO, WOUV FWUISMI QTW JUDU RPMNHEZUEB, OIBD KBFWC JL ETPOV / DYJJ SCKTIPH, IGADM ZMHB"],
+["6339","DIP","16:30 XWSGCSMYR: UEORHDYB L VDTD-HYQQ GKVRUGHSVGMUU SQXZBE / PDWLFEN PZDKIQAK-WWUNK"],
+["6338","PXD","15:50 XCLFQIJYR: EGTNLO ILDWUL ORQ XRUAXYEO BXCKDTFCSLN (ZII FDD AL ZXMFQMGNSY OTLNUZRV) / CBIBT MFXCUDQYB"],
+["6337","JHV","15:50 KCVPMYOIM: FA QXKS BWKH SKIPX-HVFPD? EAKEVDCD E FVXXUKKWE MRV QWM KX LBMFIYPUPJ / BJOZFBAP WZEĄS"],
+["6336","HZV",'15:25 OGWTHVFVR: ZHLJAKWL DE LBYO, KVV IA KN EXYYPRV: WGS PJYRQKVF "TZTFKJ XPZHXK" DQ CAUZ / TKE VWXTB FWSPC']
+];
+const $=id=>document.getElementById(id);
+const rs=[$("r0"),$("r1"),$("r2")];
+function start(){return rs.map(r=>(r.value.toUpperCase().match(/[A-Z]/)||["A"])[0]).join("")}
+function render(){
+  const r=enigma($("cin").value.toUpperCase(),start());
+  $("out").textContent=r.out;
+  $("endpos").textContent="End position: "+r.end;
+}
+rs.forEach((r,i)=>r.addEventListener("input",()=>{r.value=r.value.toUpperCase().replace(/[^A-Z]/g,"");if(r.value&&rs[i+1])rs[i+1].focus();render()}));
+$("cin").addEventListener("input",render);
+const t=enigma("HELLO DEVFEST","AAA").out, pass=t==="IABEA NVTNZMA";
+$("selftest").className="status "+(pass?"ok":"bad");
+$("selftest").innerHTML='<span class="lamp"></span>Test vector AAA · HELLO DEVFEST → '+t+(pass?" · matches":" · does not match IABEA NVTNZMA");
+const log=$("log");log.className="log";
+const API="https://devfest-vibe-lounge.web.app/api";
+const seen=new Map();
+TX.forEach(([n,s,c])=>seen.set(n,{n,s,c}));
+function draw(){
+const rows=[...seen.values()].map(x=>({...x,p:enigma(x.c,x.s).out}));
+rows.sort((a,b)=>a.p.slice(0,5).localeCompare(b.p.slice(0,5))||a.p.localeCompare(b.p));
+log.replaceChildren();
+rows.forEach(x=>{
+  const m=x.p.match(/^(\d\d:\d\d) (\w+): (.*)$/);
+  const el=document.createElement("button");
+  el.className="tx";el.type="button";el.style.textAlign="left";el.style.font="inherit";el.style.color="inherit";
+  el.innerHTML='<div class="meta"><b>'+(m?m[1]:"")+'</b> · №'+x.n+' · '+x.s+'</div><div class="plain"></div><div class="cipher"></div>';
+  el.querySelector(".plain").innerHTML=m?'<span class="room">'+m[2]+'</span>':'';
+  el.querySelector(".plain").append(m?m[3]:x.p);
+  el.querySelector(".cipher").textContent=x.c;
+  el.addEventListener("click",()=>{[...x.s].forEach((c,i)=>rs[i].value=c);$("cin").value=x.c;render();window.scrollTo({top:0,behavior:"smooth"})});
+  log.append(el);
+});
+}
+async function poll(){
+  try{
+    const r=await fetch(API+"/transmissions",{cache:"no-store"});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const j=await r.json();
+    (j.transmissions||[]).forEach(t=>seen.set(String(t.number),{n:String(t.number),s:t.start,c:t.ciphertext}));
+    draw();
+    $("feed").textContent="Live from /api/transmissions · "+seen.size+" talks decoded · last update "+new Date().toLocaleTimeString()+". Tap one to load it into the machine.";
+  }catch(e){
+    $("feed").textContent="Live feed unavailable ("+e.message+"). Showing transmissions 6336–6345 captured on 30 Oct 2026. Paste a new one above.";
+  }
+}
+draw();render();poll();setInterval(poll,60000);
+</script>
+</body>
+</html>
