@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://devfest-vibe-lounge.web.app; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <title>Vibe Lounge Enigma</title>
 <meta name="description" content="Enigma I decoder for the DevFest Vibe Lounge. Live intercepts, decrypted.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -108,6 +110,9 @@ h2{font-family:var(--stencil);font-weight:700;font-size:28px;letter-spacing:.06e
 .plain{font-family:var(--type);font-size:16px;line-height:1.45;min-width:0}
 .cipher{font-size:12px;color:var(--ink-soft);min-width:0;word-break:break-word;opacity:.8}
 @media (max-width:520px){.tx{grid-template-columns:1fr}.time{grid-row:auto;font-size:18px}}
+@media (max-width:520px){.notice{font-size:13px}}
+.notice{border:2px solid var(--stamp);color:var(--ink);padding:12px 16px;font-size:14px;line-height:1.5;max-width:70ch}
+.notice b{font-family:var(--stencil);font-weight:700;color:var(--stamp);letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
 footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;border-top:1px solid var(--rule);padding-top:12px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
 .sig{font-family:var(--type);font-size:15px;letter-spacing:0;text-transform:none;color:var(--ink)}
 </style>
@@ -167,6 +172,10 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;bo
       </div>
       <div class="log" id="log"></div>
     </section>
+
+    <aside class="notice" role="note">
+      <b>Notice to intruders.</b> This is a static page with no login, no database and no secrets. It only reads the public DevFest feed. There is nothing here to break into, so please don't try. Enjoy the talks instead.
+    </aside>
 
     <footer>
       <div>DevFest Prague · 30 Oct 2026</div>
@@ -259,8 +268,9 @@ function draw(){
     const el=document.createElement("button");el.className="tx";el.type="button";
     el.innerHTML='<div class="time"></div><div class="meta"></div><div class="plain"></div><div class="cipher"></div>';
     el.querySelector(".time").textContent=m?m[1]:"—";
-    el.querySelector(".meta").innerHTML='<span class="room"></span> · № '+x.n+' · Start '+x.s;
-    el.querySelector(".room").textContent=m?m[2]:"";
+    const meta=el.querySelector(".meta"),room=document.createElement("span");
+    room.className="room";room.textContent=m?m[2]:"";
+    meta.append(room," · № "+x.n+" · Start "+x.s);
     el.querySelector(".plain").textContent=m?m[3]:x.p;
     el.querySelector(".cipher").textContent=x.c;
     el.setAttribute("aria-label","Load transmission "+x.n+" into the machine");
@@ -271,17 +281,24 @@ function draw(){
     log.append(el);
   });
 }
+function setFeed(live,text){
+  const f=$("feed"),d=document.createElement("span");d.className="dot"+(live?" live":"");f.replaceChildren(d,text);
+}
 async function poll(){
   try{
-    const r=await fetch(API+"/transmissions",{cache:"no-store"});
+    const r=await fetch(API+"/transmissions",{cache:"no-store",credentials:"omit",referrerPolicy:"no-referrer"});
     if(!r.ok)throw new Error("HTTP "+r.status);
     const j=await r.json();
-    (j.transmissions||[]).forEach(t=>seen.set(String(t.number),{n:String(t.number),s:t.start,c:t.ciphertext}));
+    (Array.isArray(j.transmissions)?j.transmissions:[]).slice(0,50).forEach(t=>{
+      if(!t||!Number.isInteger(t.number)||!/^[A-Z]{3}$/.test(t.start)||typeof t.ciphertext!=="string"||t.ciphertext.length>600)return;
+      seen.set(String(t.number),{n:String(t.number),s:t.start,c:t.ciphertext});
+    });
+    while(seen.size>300)seen.delete(seen.keys().next().value);
     draw();
     const now=new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
-    $("feed").innerHTML='<span class="dot live"></span>Receiving live · '+seen.size+' intercepts · last at '+now+'. Tap a line to run it through the machine.';
+    setFeed(true,"Receiving live · "+seen.size+" intercepts · last at "+now+". Tap a line to run it through the machine.");
   }catch(e){
-    $("feed").innerHTML='<span class="dot"></span>Wireless room silent ('+e.message+'). Showing intercepts 6336–6345 of 30 Oct 2026.';
+    setFeed(false,"Wireless room silent. Showing intercepts 6336–6345 of 30 Oct 2026.");
   }
 }
 draw();grow();render(true);poll();setInterval(poll,60000);
