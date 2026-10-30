@@ -160,6 +160,17 @@ h2{font-family:var(--stencil);font-weight:700;font-size:28px;letter-spacing:.06e
 .ctl.primary:hover{background:#ffe29a;color:#2a1d00}
 .ctl[aria-pressed="true"]{border-color:var(--lamp-on);color:var(--lamp-on)}
 .ctl:disabled{opacity:.4;cursor:default}
+.setgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 20px}
+.setgrid .wide{grid-column:1/-1}
+.sel3{display:flex;gap:8px;flex-wrap:wrap}
+.machine select,.machine .ring,.machine .plugs{font-family:var(--type);font-size:16px;color:var(--ink);background:var(--paper);border:0;border-radius:3px;padding:7px 9px;box-shadow:inset 0 2px 4px rgba(0,0,0,.35)}
+.machine .ring{width:44px;text-align:center;text-transform:uppercase}
+.machine .plugs{width:100%;text-transform:uppercase;letter-spacing:.08em}
+.machine select:focus-visible,.machine .ring:focus-visible,.machine .plugs:focus-visible{outline:3px solid var(--lamp-on);outline-offset:2px}
+.setfoot{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin-top:14px}
+.setmsg{font-size:12px;color:var(--cream-soft);max-width:60ch}
+.setmsg.warn{color:#ffb26b}
+.warnline{font-size:13px;color:#ffb26b;min-height:0}
 details.own summary{cursor:pointer;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--cream-soft)}
 details.own[open] summary{margin-bottom:10px}
 textarea{display:block;width:100%;min-height:80px;resize:vertical;font-family:var(--type);font-size:16px;line-height:1.5;padding:12px 14px;border:0;border-radius:3px;
@@ -251,11 +262,28 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;bo
         <button class="ctl" id="finish" type="button">Finish now</button>
       </div>
 
+      <details class="own" id="settings">
+        <summary>Machine settings</summary>
+        <div class="setgrid">
+          <div><label class="label" for="w0">Rotor order · left, middle, right</label>
+            <div class="sel3"><select id="w0"></select><select id="w1"></select><select id="w2"></select></div></div>
+          <div><label class="label" for="refl">Reflector</label><select id="refl"></select></div>
+          <div><label class="label" for="g0">Ring settings</label>
+            <div class="sel3"><input id="g0" class="ring" maxlength="1"><input id="g1" class="ring" maxlength="1"><input id="g2" class="ring" maxlength="1"></div></div>
+          <div class="wide"><label class="label" for="plugs">Plugboard pairs</label><input id="plugs" class="plugs" spellcheck="false" autocomplete="off"></div>
+        </div>
+        <div class="setfoot">
+          <span id="setmsg" class="setmsg"></span>
+          <button class="ctl" id="reset" type="button">Reset to lounge machine</button>
+        </div>
+      </details>
+
       <details class="own">
         <summary>Type your own intercept</summary>
         <label class="label" for="cin">Ciphertext</label>
         <textarea id="cin" spellcheck="false"></textarea>
       </details>
+      <div class="warnline" id="warn" hidden></div>
       <div class="check" id="selftest"></div>
       <div class="slam" id="slam" aria-hidden="true">Cracked<small id="slamsub"></small></div>
     </section>
@@ -273,28 +301,76 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;bo
 
 <script>
 const A="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const ROT=[["EKMFLGDQVZNTOWYHXUSPAIBRCJ","Q"],["AJDKSIRUXBLHWTMCQGZNPYFVOE","E"],["BDFHJLCPRTXVZNYEIWGAKMUSQO","V"]];
-const REF="YRUHQSLDPXNGOKMIEBFZCWVJAT";
-const PB={};["DE","VF","ST"].forEach(p=>{PB[p[0]]=p[1];PB[p[1]]=p[0]});
-
-/* Runs the whole text and records, for every letter, the rotor windows and the letter at each stage of the wiring. */
-function trace(text,start){
-  const pos=[...start].map(c=>A.indexOf(c)),steps=[];let out="";
-  for(const ch of text){
-    if(!A.includes(ch)){steps.push({ch,out:ch});out+=ch;continue}
-    if(pos[1]===A.indexOf(ROT[1][1])){pos[1]=(pos[1]+1)%26;pos[0]=(pos[0]+1)%26}
-    else if(pos[2]===A.indexOf(ROT[2][1])){pos[1]=(pos[1]+1)%26}
-    pos[2]=(pos[2]+1)%26;
-    const path=[ch];let c=A.indexOf(PB[ch]||ch);path.push(A[c]);
-    for(const i of [2,1,0]){c=(A.indexOf(ROT[i][0][(c+pos[i])%26])-pos[i]+26)%26;path.push(A[c])}
-    c=A.indexOf(REF[c]);path.push(A[c]);
-    for(const i of [0,1,2]){c=(ROT[i][0].indexOf(A[(c+pos[i])%26])-pos[i]+26)%26;path.push(A[c])}
-    const o=PB[A[c]]||A[c];path.push(o,o);
-    steps.push({ch,out:o,path,win:pos.map(i=>A[i]).join("")});out+=o;
+/* Historical Enigma I parts. The lounge machine itself is read from /api/enigma at start-up. */
+const LIBRARY={
+  rotors:{I:["EKMFLGDQVZNTOWYHXUSPAIBRCJ","Q"],II:["AJDKSIRUXBLHWTMCQGZNPYFVOE","E"],III:["BDFHJLCPRTXVZNYEIWGAKMUSQO","V"],
+          IV:["ESOVPZJAYQUIRHXLNFTGKDCMWB","J"],V:["VZBRGITYUPSDNHLXAWMJQOFECK","Z"]},
+  reflectors:{B:"YRUHQSLDPXNGOKMIEBFZCWVJAT",C:"FVPJIAOYEDRZXWGCTKUQSBNMHL"}
+};
+const BUILTIN={rotors:["I","II","III"],reflector:"B",rings:"AAA",plugboard:["DE","VF","ST"],
+  test:{start:"AAA",plaintext:"HELLO DEVFEST",ciphertext:"IABEA NVTNZMA"}};
+const isPerm=w=>typeof w==="string"&&w.length===26&&[...w].sort().join("")===A;
+function parsePlugs(list){
+  const used=new Set(),pairs=[];
+  for(const raw of list){
+    const p=String(raw).toUpperCase().trim();if(!p)continue;
+    if(!/^[A-Z]{2}$/.test(p)||p[0]===p[1]||used.has(p[0])||used.has(p[1]))return null;
+    used.add(p[0]);used.add(p[1]);pairs.push(p);
   }
-  return {steps,out,end:pos.map(i=>A[i]).join("")};
+  return pairs.length<=13?pairs:null;
 }
-const decrypt=(c,s)=>trace(c,s).out;
+/* Validates /api/enigma and registers its parts. Returns a settings object or null. */
+function fromApi(j){
+  try{
+    if(!j||!Array.isArray(j.rotors)||j.rotors.length!==3)return null;
+    const names=[];
+    for(const r of j.rotors){
+      if(!r||typeof r.name!=="string"||!/^[A-Za-z0-9 ]{1,12}$/.test(r.name)||!isPerm(r.wiring)||!/^[A-Z]{1,2}$/.test(r.notch))return null;
+      const known=LIBRARY.rotors[r.name];
+      const key=known&&known[0]===r.wiring?r.name:r.name+" (lounge)";
+      LIBRARY.rotors[key]=[r.wiring,r.notch];names.push(key);
+    }
+    const rf=j.reflector;if(!rf||typeof rf.name!=="string"||!/^[A-Za-z0-9 ]{1,12}$/.test(rf.name)||!isPerm(rf.wiring))return null;
+    if([...rf.wiring].some((c,i)=>rf.wiring[A.indexOf(c)]!==A[i]||c===A[i]))return null;
+    const rk=LIBRARY.reflectors[rf.name]===rf.wiring||!LIBRARY.reflectors[rf.name]?rf.name:rf.name+" (lounge)";
+    LIBRARY.reflectors[rk]=rf.wiring;
+    if(!/^[A-Z]{3}$/.test(j.rings))return null;
+    const plugs=parsePlugs(Array.isArray(j.plugboard)?j.plugboard:[]);if(!plugs)return null;
+    const tv=j.testVector&&/^[A-Z]{3}$/.test(j.testVector.start)&&typeof j.testVector.plaintext==="string"&&typeof j.testVector.ciphertext==="string"
+      ?{start:j.testVector.start,plaintext:j.testVector.plaintext.slice(0,200),ciphertext:j.testVector.ciphertext.slice(0,200)}:null;
+    return {rotors:names,reflector:rk,rings:j.rings,plugboard:plugs,test:tv};
+  }catch(e){return null}
+}
+/* Builds a machine from settings. trace() records, for every letter, the rotor windows and the letter after each stage. */
+function makeMachine(cfg){
+  const R=cfg.rotors.map(n=>LIBRARY.rotors[n]),REF=LIBRARY.reflectors[cfg.reflector];
+  const ring=[...cfg.rings].map(c=>A.indexOf(c)),PB={};
+  cfg.plugboard.forEach(p=>{PB[p[0]]=p[1];PB[p[1]]=p[0]});
+  const atNotch=(i,pos)=>R[i][1].includes(A[pos[i]]);
+  const fwd=(i,c,pos)=>{const sh=(pos[i]-ring[i]+26)%26;return (A.indexOf(R[i][0][(c+sh)%26])-sh+26)%26};
+  const back=(i,c,pos)=>{const sh=(pos[i]-ring[i]+26)%26;return (R[i][0].indexOf(A[(c+sh)%26])-sh+26)%26};
+  function trace(text,start){
+    const pos=[...start].map(c=>A.indexOf(c)),steps=[];let out="";
+    for(const ch of text){
+      if(!A.includes(ch)){steps.push({ch,out:ch});out+=ch;continue}
+      if(atNotch(1,pos)){pos[1]=(pos[1]+1)%26;pos[0]=(pos[0]+1)%26}       /* double step */
+      else if(atNotch(2,pos)){pos[1]=(pos[1]+1)%26}
+      pos[2]=(pos[2]+1)%26;
+      const path=[ch];let c=A.indexOf(PB[ch]||ch);path.push(A[c]);
+      for(const i of [2,1,0]){c=fwd(i,c,pos);path.push(A[c])}
+      c=A.indexOf(REF[c]);path.push(A[c]);
+      for(const i of [0,1,2]){c=back(i,c,pos);path.push(A[c])}
+      const o=PB[A[c]]||A[c];path.push(o,o);
+      steps.push({ch,out:o,path,win:pos.map(i=>A[i]).join("")});out+=o;
+    }
+    return {steps,out,end:pos.map(i=>A[i]).join("")};
+  }
+  return {trace,decrypt:(c,s)=>trace(c,s).out};
+}
+let LOUNGE=structuredClone(BUILTIN),loungeSource="built-in";
+let lounge=makeMachine(LOUNGE),user=makeMachine(LOUNGE),userCfg=structuredClone(LOUNGE);
+const decrypt=(c,s)=>lounge.decrypt(c,s);
+const trace=(t,s)=>user.trace(t,s);
 
 const TX=[
 ["6345","ATT","09:50 LZNCVSOFD: ZZW RO UUJ JKVKAFFECY SRDM MIN? DBWO HPTIYPWFW LTV TOCTXVSEKW XPGMQAJW / BNLPHXT LCZZJG"],
@@ -378,7 +454,9 @@ function load(cipher,start,key,n){
   [...start].forEach((c,i)=>rs[i].value=c);
   $("cin").value=cipher;
   const t=trace(cipher.toUpperCase(),start);
-  job.steps=t.steps;job.i=0;job.key=key;job.start=start;job.n=n;
+  job.steps=t.steps;job.i=0;job.key=key;job.start=start;job.n=n;job.valid=!key||t.out===key;
+  const w=$("warn");w.hidden=job.valid;
+  w.textContent=job.valid?"":"Your machine settings differ from the lounge machine, so this intercept will come out as gibberish and won't count. Use Reset to lounge machine to crack it.";
   $("headno").textContent=n?"№ "+n:"№ —";
   buildTape(job.steps);showPath(null);light(null);setWindows(start);updateCounter();controls();
   $("pathcap").replaceChildren("Press ",Object.assign(document.createElement("b"),{textContent:"Run the machine"})," to watch each letter travel through the wiring.");
@@ -426,6 +504,7 @@ function finishNow(){
 function complete(){
   light(null);
   if(!job.key)return;
+  if(!job.valid)return;
   const was=cracked.has(job.key);cracked.add(job.key);store.set("vle.cracked",[...cracked]);
   const before=rankFor(was?cracked.size:cracked.size-1).name,after=rankFor(cracked.size).name;
   if(!was){
@@ -456,7 +535,7 @@ function updateScore(){
 /* ---------- Intercepts ---------- */
 const API="https://devfest-vibe-lounge.web.app/api";
 const seen=new Map(),fresh=new Set();
-TX.forEach(([n,s,c])=>seen.set(n,{n,s,c}));
+TX.forEach(([n,s,c])=>seen.set(n,{n,s,c,at:null}));
 function uniqueRows(){
   const rows=[...seen.values()].map(x=>({...x,p:decrypt(x.c,x.s)}));
   const uniq=new Map();rows.sort((a,b)=>+b.n-+a.n).forEach(x=>{if(!uniq.has(x.p))uniq.set(x.p,x)});
@@ -472,7 +551,7 @@ function draw(){
     const time=document.createElement("div");time.className="time";time.textContent=(m||cm)?(m||cm)[1]:"—";
     const meta=document.createElement("div");meta.className="meta";
     const room=document.createElement("span");room.className="room";room.textContent=ok&&m?m[2]:"Room sealed";
-    meta.append(room," · № "+x.n+" · Start "+x.s);
+    meta.append(room," · № "+x.n+" · Start "+x.s+(x.at?" · Sent "+x.at.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):""));
     const body=document.createElement("div");body.className="body";body.textContent=ok?(m?m[3]:x.p):(cm?cm[3]:x.c);
     const cta=document.createElement("span");cta.className="cta";cta.textContent=ok?"✓ Cracked":"Decrypt ▸";
     el.append(time,meta,body,cta);
@@ -498,7 +577,8 @@ async function poll(){
     (Array.isArray(j.transmissions)?j.transmissions:[]).slice(0,50).forEach(t=>{
       if(!t||!Number.isInteger(t.number)||!/^[A-Z]{3}$/.test(t.start)||typeof t.ciphertext!=="string"||t.ciphertext.length>600)return;
       const n=String(t.number);if(!seen.has(n)&&booted)fresh.add(n);
-      seen.set(n,{n,s:t.start,c:t.ciphertext});
+      const d=typeof t.sentAt==="string"?new Date(t.sentAt):null;
+      seen.set(n,{n,s:t.start,c:t.ciphertext,at:d&&!isNaN(d)?d:null});
     });
     while(seen.size>300)seen.delete(seen.keys().next().value);
     draw();
@@ -528,14 +608,60 @@ function manual(){
   load(c,s,match?match.p:null,match?match.n:null);
 }
 
-const tv=decrypt("HELLO DEVFEST","AAA"),pass=tv==="IABEA NVTNZMA";
-$("selftest").replaceChildren("Machine check · AAA · HELLO DEVFEST → "+tv+" · ",Object.assign(document.createElement("b"),{className:pass?"":"bad",textContent:pass?"verified":"mismatch"}));
+/* ---------- Settings panel ---------- */
+const W=[$("w0"),$("w1"),$("w2")],G=[$("g0"),$("g1"),$("g2")];
+function fillSelects(){
+  W.forEach(sel=>{sel.replaceChildren(...Object.keys(LIBRARY.rotors).map(n=>new Option(n,n)))});
+  $("refl").replaceChildren(...Object.keys(LIBRARY.reflectors).map(n=>new Option(n,n)));
+}
+function showCfg(c){
+  W.forEach((sel,i)=>sel.value=c.rotors[i]);$("refl").value=c.reflector;
+  G.forEach((g,i)=>g.value=c.rings[i]);$("plugs").value=c.plugboard.join(" ");
+}
+function same(a,b){return a.rotors.join()===b.rotors.join()&&a.reflector===b.reflector&&a.rings===b.rings&&[...a.plugboard].sort().join()===[...b.plugboard].sort().join()}
+function settingsMsg(text,warn){const m=$("setmsg");m.textContent=text;m.classList.toggle("warn",!!warn)}
+function applySettings(){
+  G.forEach(g=>g.value=g.value.toUpperCase().replace(/[^A-Z]/g,""));
+  const rotors=W.map(s=>s.value);
+  if(new Set(rotors).size!==3)return settingsMsg("Each rotor can be used only once.",true);
+  const rings=G.map(g=>g.value||"A").join("");
+  const plugs=parsePlugs($("plugs").value.toUpperCase().split(/[^A-Z]+/).filter(Boolean));
+  if(!plugs)return settingsMsg("Plugboard needs letter pairs like DE VF ST, each letter used once, at most 13 pairs.",true);
+  userCfg={rotors,reflector:$("refl").value,rings,plugboard:plugs,test:LOUNGE.test};user=makeMachine(userCfg);
+  settingsMsg(same(userCfg,LOUNGE)?"Matches the lounge machine ("+loungeSource+").":"Custom settings. Intercepts from the lounge will not decrypt.",!same(userCfg,LOUNGE));
+  load($("cin").value,startPos(),job.key,job.n);
+}
+W.concat([$("refl")]).forEach(el=>el.addEventListener("change",applySettings));
+G.forEach((g,i)=>g.addEventListener("input",()=>{g.value=g.value.toUpperCase().replace(/[^A-Z]/g,"");if(g.value&&G[i+1])G[i+1].focus();applySettings()}));
+$("plugs").addEventListener("change",applySettings);
+$("plugs").addEventListener("input",()=>{if(parsePlugs($("plugs").value.toUpperCase().split(/[^A-Z]+/).filter(Boolean)))applySettings()});
+$("reset").addEventListener("click",()=>{userCfg=structuredClone(LOUNGE);user=makeMachine(userCfg);showCfg(userCfg);applySettings()});
 
-draw();
-const first=nextSealed()||uniqueRows()[0];
-if(first)load(first.c,first.s,first.p,first.n);else buildTape([]);
-draw();
-poll();setInterval(poll,60000);
+function selfTest(){
+  const t=LOUNGE.test||BUILTIN.test,got=lounge.decrypt(t.plaintext.toUpperCase(),t.start),pass=got===t.ciphertext;
+  $("selftest").replaceChildren("Machine "+(loungeSource==="read from /api/enigma"?"read from /api/enigma":"using built-in settings (API unreachable)")+
+    " · test vector "+t.start+" · "+t.plaintext+" → "+got+" · ",
+    Object.assign(document.createElement("b"),{className:pass?"":"bad",textContent:pass?"verified":"mismatch"}));
+}
+async function readMachine(){
+  try{
+    const r=await fetch(API+"/enigma",{cache:"no-store",credentials:"omit",referrerPolicy:"no-referrer"});
+    if(!r.ok)throw 0;
+    const cfg=fromApi(await r.json());
+    if(cfg){LOUNGE=cfg;loungeSource="read from /api/enigma";lounge=makeMachine(LOUNGE);userCfg=structuredClone(LOUNGE);user=makeMachine(userCfg)}
+  }catch(e){}
+  fillSelects();showCfg(userCfg);settingsMsg("Matches the lounge machine ("+loungeSource+").");selfTest();
+}
+
+(async()=>{
+  fillSelects();showCfg(userCfg);buildTape([]);
+  await readMachine();
+  draw();
+  const first=nextSealed()||uniqueRows()[0];
+  if(first)load(first.c,first.s,first.p,first.n);
+  draw();
+  poll();setInterval(poll,60000);
+})();
 </script>
 </body>
 </html>
