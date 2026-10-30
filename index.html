@@ -6,28 +6,20 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://devfest-vibe-lounge.web.app; img-src 'self' data:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Vibe Lounge Enigma</title>
-<meta name="description" content="Enigma I decoder for the DevFest Vibe Lounge. Live intercepts, decrypted.">
+<meta name="description" content="Crack the DevFest agenda on a 1945 Enigma I. Live intercepts, decrypted letter by letter.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&family=Stardos+Stencil:wght@400;700&display=swap">
 <style>
-/* Layout: a 1945 decrypt sheet on a blackout desk. Machine panel (rotor windows, lampboard) above, typed intercept log below.
+/* Layout: a 1945 decrypt sheet on a blackout desk.
+   Order of play: briefing + progress -> intercepts to crack -> the machine (rotors, signal path, lampboard, decrypt tape).
    One deliberate look: buff paper, ribbon ink, red censor stamp, brass and bakelite on the machine. */
 :root{
   color-scheme:light;
-  --desk:#2a2622;      /* walnut desk under the paper */
-  --paper:#e8dcc0;     /* buff signals form */
-  --paper-2:#dccdab;   /* ruled band / fold shadow */
-  --ink:#1f1b16;       /* typewriter ribbon */
-  --ink-soft:#5a5043;  /* faded carbon copy */
-  --rule:#b9a57f;      /* printed form lines */
-  --stamp:#a5281f;     /* censor stamp red */
-  --bakelite:#1b1917;  /* machine body */
-  --brass:#b48a3c;     /* rotor window bezel */
-  --lamp-off:#3a352f;
-  --lamp-on:#ffd36b;
-  --ok:#2f5d3a;
-  --stencil:"Stardos Stencil","Impact","Arial Narrow",sans-serif;
+  --desk:#2a2622; --paper:#e8dcc0; --paper-2:#dccdab; --ink:#1f1b16; --ink-soft:#5a5043; --rule:#b9a57f;
+  --stamp:#a5281f; --bakelite:#1b1917; --bakelite-2:#26231f; --cream:#e9dfc8; --cream-soft:#a99a7c;
+  --brass:#b48a3c; --lamp-off:#3a352f; --lamp-on:#ffd36b; --ok:#2f5d3a;
+  --stencil:"Stardos Stencil",Impact,"Arial Narrow",sans-serif;
   --type:"Special Elite","Courier Prime","Courier New",Courier,monospace;
   --mono:"Courier Prime","Courier New",Courier,monospace;
 }
@@ -35,83 +27,156 @@
 html{background:var(--desk)}
 body{margin:0;min-height:100vh;color:var(--ink);font-family:var(--mono);font-size:15px;line-height:1.55;
   background:var(--desk) radial-gradient(ellipse at 50% 0%,#3a332c 0%,var(--desk) 70%)}
-.sheet{position:relative;max-width:920px;margin:24px auto 56px;background:var(--paper);
-  padding-block:40px 48px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));
+button{font:inherit;color:inherit}
+.sheet{position:relative;max-width:940px;margin:24px auto 56px;background:var(--paper);
+  padding-block:36px 44px;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));
   box-shadow:0 2px 0 #c9b893,0 24px 60px rgba(0,0,0,.55);
-  background-image:
-    radial-gradient(circle at 12% 18%,rgba(120,90,40,.10) 0,transparent 22%),
+  background-image:radial-gradient(circle at 12% 18%,rgba(120,90,40,.10) 0,transparent 22%),
     radial-gradient(circle at 88% 74%,rgba(120,90,40,.12) 0,transparent 26%),
-    repeating-linear-gradient(0deg,transparent 0 27px,rgba(90,70,40,.06) 27px 28px);}
+    repeating-linear-gradient(0deg,transparent 0 27px,rgba(90,70,40,.06) 27px 28px)}
 @media (min-width:720px){.sheet{padding-left:56px;padding-right:56px}}
 .punch{position:absolute;left:14px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:space-around;pointer-events:none}
 .punch i{display:block;width:12px;height:12px;border-radius:50%;background:var(--desk);box-shadow:inset 0 1px 2px rgba(0,0,0,.6)}
 @media (max-width:719px){.punch{display:none}}
-.inner{display:grid;gap:28px}
+.inner{display:grid;gap:30px}
+.label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px}
 
-/* Form heading */
+/* Header */
 .form-head{display:grid;grid-template-columns:1fr auto;gap:8px 20px;align-items:start;border-bottom:2px solid var(--ink);padding-bottom:14px}
-.form-head .issuer{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
-h1{grid-column:1;font-family:var(--stencil);font-weight:700;font-size:clamp(36px,7vw,62px);line-height:.95;margin:4px 0 0;letter-spacing:.04em;text-transform:uppercase;text-wrap:balance}
-.formno{grid-column:2;grid-row:1/3;text-align:right;font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+.issuer{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+h1{grid-column:1;font-family:var(--stencil);font-weight:700;font-size:clamp(34px,7vw,60px);line-height:.95;margin:4px 0 0;letter-spacing:.04em;text-transform:uppercase;text-wrap:balance}
+.formno{grid-column:2;grid-row:1/3;text-align:right;font-size:12px;color:var(--ink-soft);white-space:nowrap}
 .formno b{display:block;font-family:var(--type);font-size:22px;color:var(--ink);font-weight:400}
-.stamp{position:absolute;right:28px;top:110px;transform:rotate(-9deg);font-family:var(--stencil);font-weight:700;
-  font-size:clamp(18px,3.4vw,28px);letter-spacing:.12em;color:var(--stamp);border:4px double var(--stamp);padding:4px 14px;
-  opacity:.82;mix-blend-mode:multiply;text-transform:uppercase;pointer-events:none;
-  -webkit-mask-image:radial-gradient(circle at 30% 40%,#000 55%,rgba(0,0,0,.65) 75%,#000 90%);mask-image:radial-gradient(circle at 30% 40%,#000 55%,rgba(0,0,0,.65) 75%,#000 90%)}
-@media (max-width:560px){.stamp{top:auto;bottom:14px;right:16px}}
-.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0;border:1px solid var(--rule)}
-.field{padding:8px 12px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);min-width:0}
-.field span{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
-.field b{font-family:var(--type);font-weight:400;font-size:15px}
+
+/* Briefing + progress */
+.brief{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px 28px;align-items:start}
+@media (max-width:680px){.brief{grid-template-columns:1fr}}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.steps li{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:baseline}
+.steps .n{font-family:var(--stencil);font-weight:700;font-size:26px;line-height:1;color:var(--stamp)}
+.steps b{font-family:var(--type);font-weight:400;font-size:17px;display:block}
+.steps span{font-size:13px;color:var(--ink-soft)}
+.score{border:2px solid var(--ink);padding:14px 16px;display:grid;gap:8px;background:rgba(255,255,255,.18)}
+.rank{font-family:var(--stencil);font-weight:700;font-size:24px;line-height:1.05;text-transform:uppercase;letter-spacing:.04em}
+.count{font-size:13px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.bar{height:12px;border:1px solid var(--ink);background:repeating-linear-gradient(90deg,transparent 0 9px,rgba(31,27,22,.12) 9px 10px)}
+.bar i{display:block;height:100%;width:0;background:var(--stamp);transition:width .6s ease}
+.next{font-size:12px;color:var(--ink-soft)}
+.go{justify-self:start;font-family:var(--stencil);font-weight:700;font-size:16px;letter-spacing:.08em;text-transform:uppercase;
+  border:2px solid var(--ink);background:var(--ink);color:var(--paper);padding:8px 14px;cursor:pointer}
+.go:hover{background:var(--stamp);border-color:var(--stamp)}
+
+/* Intercepts */
+.log-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 16px;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:6px}
+h2{font-family:var(--stencil);font-weight:700;font-size:28px;letter-spacing:.06em;text-transform:uppercase;margin:0}
+.feed{font-size:12px;color:var(--ink-soft);max-width:60ch}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--stamp);margin-right:6px;vertical-align:middle}
+@media (prefers-reduced-motion:no-preference){.dot.live{animation:pulse 2s ease-in-out infinite}}
+@keyframes pulse{50%{opacity:.25}}
+.log{display:grid;gap:12px}
+.tx{position:relative;display:grid;grid-template-columns:70px minmax(0,1fr) auto;gap:4px 16px;align-items:center;width:100%;
+  padding:14px 14px;text-align:left;cursor:pointer;background:rgba(255,255,255,.22);border:1px solid var(--rule);border-left:6px solid var(--ink);
+  box-shadow:0 2px 0 rgba(90,70,40,.18);transition:transform .15s ease,box-shadow .15s ease,background .15s}
+.tx:hover{transform:translateY(-2px);box-shadow:0 6px 0 rgba(90,70,40,.18);background:rgba(255,255,255,.4)}
+.tx:focus-visible,.go:focus-visible,.ctl:focus-visible,.rotor:focus-visible,textarea:focus-visible{outline:3px solid var(--stamp);outline-offset:3px}
+.tx .time{font-family:var(--type);font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums;grid-row:1/3}
+.tx .meta{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);min-width:0}
+.tx .meta .room{color:var(--stamp);font-weight:700}
+.tx .body{font-family:var(--type);font-size:16px;line-height:1.45;min-width:0;word-break:break-word}
+.tx.sealed .body{letter-spacing:.06em;color:var(--ink);filter:blur(.2px)}
+.tx .cta{grid-row:1/3;grid-column:3;font-family:var(--stencil);font-weight:700;font-size:14px;letter-spacing:.1em;text-transform:uppercase;
+  white-space:nowrap;padding:8px 12px;border:2px solid var(--stamp);color:var(--stamp);background:var(--paper)}
+.tx.sealed .cta{background:var(--stamp);color:var(--paper)}
+.tx.sealed:hover .cta{background:var(--ink);border-color:var(--ink)}
+.tx.cracked{border-left-color:var(--ok)}
+.tx.cracked .cta{border-color:var(--ok);color:var(--ok);transform:rotate(-4deg)}
+.tx.current{background:rgba(255,211,107,.28);border-left-color:var(--lamp-on)}
+.tx .badge{position:absolute;top:-9px;left:14px;font-family:var(--stencil);font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:1px 8px;background:var(--ink);color:var(--paper)}
+.tx .badge.new{background:var(--stamp)}
+@media (prefers-reduced-motion:no-preference){.tx.hint{animation:nudge 1.6s ease-in-out infinite}}
+@keyframes nudge{0%,100%{box-shadow:0 2px 0 rgba(90,70,40,.18),0 0 0 0 rgba(165,40,31,.0)}50%{box-shadow:0 2px 0 rgba(90,70,40,.18),0 0 0 6px rgba(165,40,31,.22)}}
+@media (max-width:560px){
+  .tx{grid-template-columns:minmax(0,1fr) auto}
+  .tx .time{grid-row:auto;font-size:18px}
+  .tx .meta{grid-column:1}
+  .tx .body{grid-column:1/3}
+  .tx .cta{grid-row:1;grid-column:2}
+}
 
 /* Machine */
-.machine{background:var(--bakelite);color:#e9dfc8;border-radius:6px;padding:22px 20px 20px;display:grid;gap:20px;
-  box-shadow:inset 0 0 0 1px #000,inset 0 2px 0 rgba(255,255,255,.06),0 6px 0 #0d0c0b}
-.mrow{display:flex;flex-wrap:wrap;gap:20px 40px;align-items:flex-end}
-.mlabel{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#a99a7c;margin-bottom:8px;display:block}
+.machine{position:relative;background:var(--bakelite);color:var(--cream);border-radius:6px;padding:22px 20px 20px;display:grid;gap:22px;
+  box-shadow:inset 0 0 0 1px #000,inset 0 2px 0 rgba(255,255,255,.06),0 6px 0 #0d0c0b;scroll-margin-top:12px}
+.machine .label{color:var(--cream-soft)}
+.mtop{display:flex;flex-wrap:wrap;gap:20px 36px;align-items:flex-end}
 .rotors{display:flex;gap:12px}
 .window{width:56px;height:68px;border-radius:6px;background:linear-gradient(#c79d4b,#8e6a2a);padding:5px;box-shadow:0 2px 0 #000}
 .rotor{width:100%;height:100%;border:0;border-radius:3px;text-align:center;font-family:var(--type);font-size:30px;text-transform:uppercase;
   color:var(--ink);background:linear-gradient(#f3ead6 0%,#e4d6b4 45%,#c9b68d 100%);box-shadow:inset 0 3px 6px rgba(0,0,0,.45)}
-.rotor:focus-visible,textarea:focus-visible,.tx:focus-visible{outline:3px solid var(--lamp-on);outline-offset:3px}
-.endpos{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#a99a7c;font-variant-numeric:tabular-nums}
-.endpos b{display:block;font-family:var(--type);font-weight:400;color:#e9dfc8;font-size:20px;letter-spacing:.3em;text-transform:none}
+.rotor.tick{animation:tick .18s ease-out}
+@keyframes tick{0%{transform:translateY(-6px);opacity:.4}100%{transform:none;opacity:1}}
+.now b{display:block;font-family:var(--type);font-weight:400;font-size:20px;letter-spacing:.3em;color:var(--cream)}
+.counter{font-size:12px;color:var(--cream-soft);font-variant-numeric:tabular-nums}
+
+/* Signal path: forward along the top, back along the bottom, reflector at the turn */
+.path{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) minmax(0,1.1fr);grid-template-rows:auto auto;gap:6px 6px}
+.st{position:relative;border:1px solid #3b362f;border-radius:4px;padding:6px 4px 8px;text-align:center;background:var(--bakelite-2);min-width:0}
+.st small{display:block;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--cream-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st b{display:block;font-family:var(--type);font-weight:400;font-size:clamp(20px,5vw,28px);line-height:1.1;color:#6d655a}
+.st.seen b{color:var(--cream)}
+.st.act{border-color:var(--lamp-on);box-shadow:0 0 0 1px var(--lamp-on),0 0 16px rgba(255,200,90,.35)}
+.st.act b{color:var(--lamp-on)}
+.st.ref{grid-column:6;grid-row:1/3;display:flex;flex-direction:column;justify-content:center}
+.st.out.seen{background:#3b2f14}
+.st.out.seen b{color:var(--lamp-on)}
+.st::after{position:absolute;font-size:12px;color:#6d655a;top:50%;transform:translateY(-50%)}
+.fw::after{content:"→";right:-10px}
+.bk::after{content:"←";left:-10px}
+.st.out::after,.st.ref::after{content:none}
+.pathcap{font-size:12px;color:var(--cream-soft);margin-top:8px;min-height:1.5em}
+.pathcap b{color:var(--lamp-on);font-weight:400;font-family:var(--type);font-size:14px}
+
 .lampboard{display:grid;gap:7px;justify-items:start}
 .lrow{display:flex;gap:7px}
 .lrow:nth-child(2){padding-left:calc(clamp(24px,6.4vw,34px)/2 + 3.5px)}
-.lamp{width:clamp(24px,6.4vw,34px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:clamp(11px,2.6vw,14px);
+.lamp{width:clamp(24px,6.4vw,34px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:clamp(11px,2.6vw,14px);
   color:#6b6357;background:radial-gradient(circle at 40% 35%,#4a443c,var(--lamp-off));box-shadow:inset 0 0 0 2px #121110}
 .lamp.on{color:#3b2a00;background:radial-gradient(circle at 45% 40%,#fff6cf,var(--lamp-on) 55%,#e0a12c);box-shadow:inset 0 0 0 2px #7a5413,0 0 18px 4px rgba(255,200,90,.55)}
-.tape{display:grid;gap:14px}
-textarea{display:block;width:100%;min-height:92px;resize:none;overflow:hidden;font-family:var(--type);font-size:17px;line-height:1.5;padding:12px 14px;border:0;border-radius:3px;
+
+/* Decrypt tape: each word shows cipher above, plain below */
+.tape{display:flex;flex-wrap:wrap;gap:10px 16px;padding:14px;border-radius:3px;background:#f4ecd8;color:var(--ink);min-height:84px;box-shadow:inset 4px 0 0 var(--stamp)}
+.w{display:inline-flex}
+.k{display:grid;grid-template-rows:auto auto;text-align:center;font-family:var(--type);min-width:.62em}
+.k .c{font-size:13px;color:var(--ink-soft);line-height:1.3}
+.k .p{font-size:19px;line-height:1.25;border-top:1px dotted var(--rule);min-height:1.25em}
+.k.cur .c{background:var(--lamp-on);color:var(--ink);border-radius:2px}
+.k.cur .p{color:var(--stamp)}
+.k.done .p{color:var(--ink)}
+.tape-empty{font-family:var(--type);font-size:16px;color:var(--ink-soft)}
+
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ctl{cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:9px 14px;border:1px solid var(--cream-soft);background:transparent;color:var(--cream);border-radius:3px}
+.ctl:hover{border-color:var(--lamp-on);color:var(--lamp-on)}
+.ctl.primary{background:var(--lamp-on);border-color:var(--lamp-on);color:#2a1d00;font-weight:700}
+.ctl.primary:hover{background:#ffe29a;color:#2a1d00}
+.ctl[aria-pressed="true"]{border-color:var(--lamp-on);color:var(--lamp-on)}
+.ctl:disabled{opacity:.4;cursor:default}
+details.own summary{cursor:pointer;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--cream-soft)}
+details.own[open] summary{margin-bottom:10px}
+textarea{display:block;width:100%;min-height:80px;resize:vertical;font-family:var(--type);font-size:16px;line-height:1.5;padding:12px 14px;border:0;border-radius:3px;
   color:var(--ink);background:var(--paper);text-transform:uppercase;box-shadow:inset 0 2px 5px rgba(0,0,0,.35)}
-.out{font-family:var(--type);font-size:17px;line-height:1.5;padding:12px 14px;margin:0;min-height:52px;border-radius:3px;background:#f4ecd8;color:var(--ink);
-  white-space:pre-wrap;word-break:break-word;box-shadow:inset 4px 0 0 var(--stamp)}
-.out .caret{display:inline-block;width:.55em;background:var(--ink);animation:blink 1s steps(1) infinite}
-@keyframes blink{50%{opacity:0}}
-.check{font-size:12px;color:#a99a7c;padding-left:0}
+.check{font-size:12px;color:var(--cream-soft)}
 .check b{color:#9fd3a8;font-weight:400}
 .check b.bad{color:#ff8f80}
 
-/* Intercept log */
-.log-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 16px;border-bottom:2px solid var(--ink);padding-bottom:8px}
-h2{font-family:var(--stencil);font-weight:700;font-size:28px;letter-spacing:.06em;text-transform:uppercase;margin:0}
-.feed{font-size:12px;color:var(--ink-soft);max-width:60ch}
-.feed .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--stamp);margin-right:6px;vertical-align:middle}
-@media (prefers-reduced-motion:no-preference){.feed .dot.live{animation:pulse 2s ease-in-out infinite}}
-@keyframes pulse{50%{opacity:.25}}
-.log{display:grid}
-.tx{display:grid;grid-template-columns:76px 1fr;gap:2px 16px;padding:14px 4px;border:0;border-bottom:1px dashed var(--rule);background:transparent;
-  text-align:left;font:inherit;color:inherit;cursor:pointer}
-.tx:hover{background:rgba(165,40,31,.05)}
-.time{font-family:var(--type);font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums;grid-row:1/4}
-.meta{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);font-variant-numeric:tabular-nums}
-.meta .room{color:var(--stamp);font-weight:700}
-.plain{font-family:var(--type);font-size:16px;line-height:1.45;min-width:0}
-.cipher{font-size:12px;color:var(--ink-soft);min-width:0;word-break:break-word;opacity:.8}
-@media (max-width:520px){.tx{grid-template-columns:1fr}.time{grid-row:auto;font-size:18px}}
-@media (max-width:520px){.notice{font-size:13px}}
-.notice{border:2px solid var(--stamp);color:var(--ink);padding:12px 16px;font-size:14px;line-height:1.5;max-width:70ch}
+.slam{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) rotate(-10deg);pointer-events:none;text-align:center;
+  font-family:var(--stencil);font-weight:700;font-size:clamp(28px,8vw,56px);letter-spacing:.1em;color:var(--stamp);text-transform:uppercase;
+  border:6px double var(--stamp);padding:6px 22px;background:rgba(244,236,216,.92);opacity:0}
+.slam small{display:block;font-family:var(--mono);font-size:13px;letter-spacing:.12em;color:var(--ink)}
+.slam.show{animation:slam 2.4s ease forwards}
+@keyframes slam{0%{opacity:0;transform:translate(-50%,-50%) rotate(-10deg) scale(2.2)}12%{opacity:1;transform:translate(-50%,-50%) rotate(-10deg) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) rotate(-10deg) scale(1)}}
+@media (prefers-reduced-motion:reduce){.slam.show{animation:none;opacity:1}.rotor.tick{animation:none}}
+
+.notice{border:2px solid var(--stamp);padding:12px 16px;font-size:14px;line-height:1.5;max-width:70ch}
 .notice b{font-family:var(--stencil);font-weight:700;color:var(--stamp);letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
 footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;border-top:1px solid var(--rule);padding-top:12px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
 .sig{font-family:var(--type);font-size:15px;letter-spacing:0;text-transform:none;color:var(--ink)}
@@ -120,57 +185,79 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;bo
 <body>
 <article class="sheet">
   <div class="punch" aria-hidden="true"><i></i><i></i><i></i></div>
-  <div class="stamp" aria-hidden="true">Decrypted</div>
   <div class="inner">
 
     <header class="form-head">
       <div class="issuer">Vibe Lounge · Signals Intelligence · Hut 6</div>
-      <div class="formno">Form&nbsp;Enig/45<b id="headno">№ 6341</b></div>
+      <div class="formno">Form Enig/45<b id="headno">№ —</b></div>
       <h1>Enigma<br>Decrypt Sheet</h1>
     </header>
 
-    <div class="fields" aria-label="Machine settings">
-      <div class="field"><span>Machine</span><b>Enigma I</b></div>
-      <div class="field"><span>Rotor order</span><b>I · II · III</b></div>
-      <div class="field"><span>Reflector</span><b>B</b></div>
-      <div class="field"><span>Ring settings</span><b>A A A</b></div>
-      <div class="field"><span>Plugboard</span><b>DE · VF · ST</b></div>
-    </div>
+    <section class="brief" aria-label="How to play">
+      <ol class="steps">
+        <li><span class="n">1</span><div><b>Pick a sealed intercept</b><span>Each one is a DevFest talk, encrypted on the lounge Enigma.</span></div></li>
+        <li><span class="n">2</span><div><b>Watch the machine work</b><span>Every letter runs through the plugboard, three rotors and the reflector, then lights a lamp.</span></div></li>
+        <li><span class="n">3</span><div><b>Crack them all</b><span>Each decrypted talk earns progress. Crack every one to make Hut 6 legend.</span></div></li>
+      </ol>
+      <div class="score" aria-live="polite">
+        <span class="label" style="margin:0">Your rank</span>
+        <div class="rank" id="rank">Recruit</div>
+        <div class="bar" aria-hidden="true"><i id="barfill"></i></div>
+        <div class="count" id="count">0 of 0 talks cracked</div>
+        <div class="next" id="nextrank"></div>
+        <button class="go" id="gonext" type="button">Crack the next one ▸</button>
+      </div>
+    </section>
 
-    <section class="machine" aria-label="Decoder">
-      <div class="mrow">
+    <section aria-label="Intercepts">
+      <div class="log-head">
+        <h2>Intercepts</h2>
+        <div class="feed" id="feed"><span class="dot"></span>Connecting to the wireless room…</div>
+      </div>
+      <div class="log" id="log"></div>
+    </section>
+
+    <section class="machine" id="machine" aria-label="Enigma machine">
+      <div class="mtop">
         <div>
-          <label class="mlabel" for="r0">Rotor start</label>
+          <label class="label" for="r0">Rotor start</label>
           <div class="rotors">
             <div class="window"><input class="rotor" id="r0" maxlength="1" value="W" aria-label="Left rotor" autocomplete="off"></div>
             <div class="window"><input class="rotor" id="r1" maxlength="1" value="G" aria-label="Middle rotor" autocomplete="off"></div>
             <div class="window"><input class="rotor" id="r2" maxlength="1" value="I" aria-label="Right rotor" autocomplete="off"></div>
           </div>
         </div>
-        <div class="endpos"><span class="mlabel">Rotors after message</span><b id="endpos">———</b></div>
+        <div class="now"><span class="label">Rotors now</span><b id="now">W G I</b></div>
+        <div class="counter" id="counter">Letter 0 of 0</div>
       </div>
 
-      <div class="lampboard" id="lampboard" aria-hidden="true"></div>
-
-      <div class="tape">
-        <div>
-          <label class="mlabel" for="cin">Intercepted ciphertext</label>
-          <textarea id="cin" spellcheck="false">17:25 WBCFAGSLF: CUBSCR RMUU’W AHQTQWWB: PCGZLAEZILZMH NMXDP QCF PIUFCRKNQLK BLX’K LFHZUH FQND HY TZMP / TWKGQ YDFBFTMDRKHV</textarea>
-        </div>
-        <div>
-          <span class="mlabel">Plaintext</span>
-          <div class="out" id="out" aria-live="polite"></div>
-        </div>
-        <div class="check" id="selftest"></div>
+      <div>
+        <span class="label">Path of the current letter</span>
+        <div class="path" id="path"></div>
+        <div class="pathcap" id="pathcap">Press <b>Run the machine</b> to watch a letter travel through the wiring.</div>
       </div>
-    </section>
 
-    <section aria-label="Decrypted transmissions">
-      <div class="log-head">
-        <h2>Intercept log</h2>
-        <div class="feed" id="feed"><span class="dot"></span>Connecting to the wireless room…</div>
+      <div><span class="label">Lampboard</span><div class="lampboard" id="lampboard" aria-hidden="true"></div></div>
+
+      <div>
+        <span class="label">Decrypt tape · cipher above, plain text below</span>
+        <div class="tape" id="tape" aria-live="off"></div>
       </div>
-      <div class="log" id="log"></div>
+
+      <div class="controls">
+        <button class="ctl primary" id="run" type="button">▶ Run the machine</button>
+        <button class="ctl" id="stepbtn" type="button">One letter</button>
+        <button class="ctl" id="speed" type="button" aria-pressed="false">Speed: normal</button>
+        <button class="ctl" id="finish" type="button">Finish now</button>
+      </div>
+
+      <details class="own">
+        <summary>Type your own intercept</summary>
+        <label class="label" for="cin">Ciphertext</label>
+        <textarea id="cin" spellcheck="false"></textarea>
+      </details>
+      <div class="check" id="selftest"></div>
+      <div class="slam" id="slam" aria-hidden="true">Cracked<small id="slamsub"></small></div>
     </section>
 
     <aside class="notice" role="note">
@@ -189,21 +276,26 @@ const A="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const ROT=[["EKMFLGDQVZNTOWYHXUSPAIBRCJ","Q"],["AJDKSIRUXBLHWTMCQGZNPYFVOE","E"],["BDFHJLCPRTXVZNYEIWGAKMUSQO","V"]];
 const REF="YRUHQSLDPXNGOKMIEBFZCWVJAT";
 const PB={};["DE","VF","ST"].forEach(p=>{PB[p[0]]=p[1];PB[p[1]]=p[0]});
-function enigma(text,start){
-  const pos=[...start].map(c=>A.indexOf(c));let out="";
+
+/* Runs the whole text and records, for every letter, the rotor windows and the letter at each stage of the wiring. */
+function trace(text,start){
+  const pos=[...start].map(c=>A.indexOf(c)),steps=[];let out="";
   for(const ch of text){
-    if(!A.includes(ch)){out+=ch;continue}
+    if(!A.includes(ch)){steps.push({ch,out:ch});out+=ch;continue}
     if(pos[1]===A.indexOf(ROT[1][1])){pos[1]=(pos[1]+1)%26;pos[0]=(pos[0]+1)%26}
     else if(pos[2]===A.indexOf(ROT[2][1])){pos[1]=(pos[1]+1)%26}
     pos[2]=(pos[2]+1)%26;
-    let c=A.indexOf(PB[ch]||ch);
-    for(const i of [2,1,0])c=(A.indexOf(ROT[i][0][(c+pos[i])%26])-pos[i]+26)%26;
-    c=A.indexOf(REF[c]);
-    for(const i of [0,1,2])c=(ROT[i][0].indexOf(A[(c+pos[i])%26])-pos[i]+26)%26;
-    out+=PB[A[c]]||A[c];
+    const path=[ch];let c=A.indexOf(PB[ch]||ch);path.push(A[c]);
+    for(const i of [2,1,0]){c=(A.indexOf(ROT[i][0][(c+pos[i])%26])-pos[i]+26)%26;path.push(A[c])}
+    c=A.indexOf(REF[c]);path.push(A[c]);
+    for(const i of [0,1,2]){c=(ROT[i][0].indexOf(A[(c+pos[i])%26])-pos[i]+26)%26;path.push(A[c])}
+    const o=PB[A[c]]||A[c];path.push(o,o);
+    steps.push({ch,out:o,path,win:pos.map(i=>A[i]).join("")});out+=o;
   }
-  return {out,end:pos.map(i=>A[i]).join("")};
+  return {steps,out,end:pos.map(i=>A[i]).join("")};
 }
+const decrypt=(c,s)=>trace(c,s).out;
+
 const TX=[
 ["6345","ATT","09:50 LZNCVSOFD: ZZW RO UUJ JKVKAFFECY SRDM MIN? DBWO HPTIYPWFW LTV TOCTXVSEKW XPGMQAJW / BNLPHXT LCZZJG"],
 ["6344","QKS","09:50 XVEVIYVRV: YUSI XBYEJT XX YEC JYPGCCZZ: OOXIUVJ ZGY UPYGWE GMUK HMZT GS YVPLSU / VDCUT ACCLWYBM"],
@@ -216,11 +308,32 @@ const TX=[
 ["6337","JHV","15:50 KCVPMYOIM: FA QXKS BWKH SKIPX-HVFPD? EAKEVDCD E FVXXUKKWE MRV QWM KX LBMFIYPUPJ / BJOZFBAP WZEĄS"],
 ["6336","HZV",'15:25 OGWTHVFVR: ZHLJAKWL DE LBYO, KVV IA KN EXYYPRV: WGS PJYRQKVF "TZTFKJ XPZHXK" DQ CAUZ / TKE VWXTB FWSPC']
 ];
+
 const $=id=>document.getElementById(id);
 const rs=[$("r0"),$("r1"),$("r2")];
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const cracked=new Set(store.get("vle.cracked",[]));
 
-/* Lampboard in the original QWERTZ layout */
+/* ---------- Signal path ---------- */
+const STAGES=[["Key","fw"],["Plugboard","fw"],["Right rotor","fw"],["Middle rotor","fw"],["Left rotor","fw"],["Reflector","ref"],
+              ["Left rotor","bk"],["Middle rotor","bk"],["Right rotor","bk"],["Plugboard","bk"],["Lamp","out"]];
+/* grid positions: forward row left to right, reflector at the turn, return row right to left */
+const PLACE=[[1,1],[1,2],[1,3],[1,4],[1,5],[1,6],[2,5],[2,4],[2,3],[2,2],[2,1]];
+const st=STAGES.map(([name,kind],i)=>{
+  const d=document.createElement("div");d.className="st "+kind;
+  d.style.gridRow=kind==="ref"?"1 / 3":PLACE[i][0];d.style.gridColumn=PLACE[i][1];
+  const s=document.createElement("small");s.textContent=name;const b=document.createElement("b");b.textContent="·";
+  d.append(s,b);$("path").append(d);return {d,b};
+});
+function showPath(p,upto){
+  st.forEach((x,i)=>{
+    const has=p&&i<=upto;x.b.textContent=has?p[i]:"·";
+    x.d.classList.toggle("seen",!!has);x.d.classList.toggle("act",!!p&&i===upto);
+  });
+}
+
+/* ---------- Lampboard ---------- */
 const lamps={};
 ["QWERTZUIO","ASDFGHJK","PYXCVBNML"].forEach(row=>{
   const r=document.createElement("div");r.className="lrow";
@@ -228,62 +341,155 @@ const lamps={};
   $("lampboard").append(r);
 });
 let lit=null;
-function light(ch){if(lit)lit.classList.remove("on");lit=lamps[ch]||null;if(lit)lit.classList.add("on")}
+function light(ch){if(lit)lit.classList.remove("on");lit=ch?lamps[ch]||null:null;if(lit)lit.classList.add("on")}
 
-function start(){return rs.map(r=>(r.value.toUpperCase().match(/[A-Z]/)||["A"])[0]).join("")}
-let typing=0;
-function render(animate){
-  const r=enigma($("cin").value.toUpperCase(),start());
-  $("endpos").textContent=r.end.split("").join(" ");
-  const out=$("out");const id=++typing;
-  if(!animate||reduce){out.textContent=r.out;const L=r.out.replace(/[^A-Z]/g,"");light(L[L.length-1]);return}
-  let i=0;out.textContent="";const caret=document.createElement("span");caret.className="caret";caret.textContent=" ";
-  const tick=()=>{
-    if(id!==typing)return;
-    if(i>=r.out.length){out.textContent=r.out;light(null);return}
-    const ch=r.out[i++];out.textContent=r.out.slice(0,i);out.append(caret);
-    if(A.includes(ch))light(ch);
-    setTimeout(tick,A.includes(ch)?32:12);
-  };tick();
+/* ---------- Tape ---------- */
+let cells=[];
+function buildTape(steps){
+  const tape=$("tape");tape.replaceChildren();cells=[];
+  if(!steps.length){const e=document.createElement("div");e.className="tape-empty";e.textContent="Pick an intercept above to load the tape.";tape.append(e);return}
+  let w=null;
+  steps.forEach((s,i)=>{
+    if(s.ch===" "){w=null;cells.push(null);return}
+    if(!w){w=document.createElement("span");w.className="w";tape.append(w)}
+    const k=document.createElement("span");k.className="k";
+    const c=document.createElement("span");c.className="c";c.textContent=s.ch;
+    const p=document.createElement("span");p.className="p";p.textContent="";
+    k.append(c,p);w.append(k);cells.push({k,p,s});
+  });
 }
-rs.forEach((r,i)=>r.addEventListener("input",()=>{r.value=r.value.toUpperCase().replace(/[^A-Z]/g,"");if(r.value&&rs[i+1])rs[i+1].focus();render(false)}));
-function grow(){const t=$("cin");t.style.height="auto";t.style.height=t.scrollHeight+"px"}
-$("cin").addEventListener("input",()=>{grow();render(false)});
-addEventListener("resize",grow);document.fonts&&document.fonts.ready.then(grow);
+function reveal(i,on){const x=cells[i];if(!x)return;x.p.textContent=x.s.out;x.k.classList.toggle("cur",!!on);x.k.classList.add("done")}
 
-const t=enigma("HELLO DEVFEST","AAA").out, pass=t==="IABEA NVTNZMA";
-$("selftest").innerHTML='Test vector · AAA · HELLO DEVFEST → '+t+' · <b class="'+(pass?'':'bad')+'">'+(pass?'verified':'mismatch')+'</b>';
+/* ---------- Machine state ---------- */
+const job={steps:[],i:0,timer:null,running:false,key:null,start:"WGI",n:null};
+let fast=false;
+function startPos(){return rs.map(r=>(r.value.toUpperCase().match(/[A-Z]/)||["A"])[0]).join("")}
+function setWindows(w,animate){$("now").textContent=w.split("").join(" ");if(animate&&!reduce){$("now").classList.remove("tick");void $("now").offsetWidth}}
+function letters(){return job.steps.filter(s=>s.path).length}
+function done(){return job.steps.slice(0,job.i).filter(s=>s.path).length}
+function updateCounter(){$("counter").textContent="Letter "+done()+" of "+letters()}
+function controls(){
+  const end=job.i>=job.steps.length;
+  $("run").textContent=job.running?"❚❚ Pause":(job.i>0&&!end?"▶ Continue":(end&&job.i>0?"↻ Replay":"▶ Run the machine"));
+  $("stepbtn").disabled=end;$("finish").disabled=end;
+}
+function load(cipher,start,key,n){
+  stop();
+  [...start].forEach((c,i)=>rs[i].value=c);
+  $("cin").value=cipher;
+  const t=trace(cipher.toUpperCase(),start);
+  job.steps=t.steps;job.i=0;job.key=key;job.start=start;job.n=n;
+  $("headno").textContent=n?"№ "+n:"№ —";
+  buildTape(job.steps);showPath(null);light(null);setWindows(start);updateCounter();controls();
+  $("pathcap").replaceChildren("Press ",Object.assign(document.createElement("b"),{textContent:"Run the machine"})," to watch each letter travel through the wiring.");
+}
+function caption(s){
+  const cap=$("pathcap");cap.replaceChildren();
+  const b1=document.createElement("b");b1.textContent=s.ch;const b2=document.createElement("b");b2.textContent=s.out;
+  cap.append("Key ",b1," goes in, reflects at ",Object.assign(document.createElement("b"),{textContent:s.path[5]}),", and lights lamp ",b2,".");
+}
+/* advance one character; animate the path stage by stage when slow */
+function advance(slowPath){
+  return new Promise(res=>{
+    if(job.i>=job.steps.length)return res(false);
+    if(job.i>0&&cells[job.i-1])cells[job.i-1].k.classList.remove("cur");
+    const s=job.steps[job.i];
+    if(!s.path){job.i++;return res(true)}
+    setWindows(s.win,true);
+    const finish=()=>{showPath(s.path,10);light(s.out);reveal(job.i,true);caption(s);job.i++;updateCounter();res(true)};
+    if(slowPath&&!reduce){
+      let k=0;const tick=()=>{showPath(s.path,k);if(k===10){finish();return}k++;job.timer=setTimeout(tick,85)};tick();
+    }else finish();
+  });
+}
+async function play(){
+  if(job.i>=job.steps.length){load($("cin").value,job.start,job.key,job.n)}
+  job.running=true;controls();
+  while(job.running&&job.i<job.steps.length){
+    const lettersDone=done();
+    const slow=!fast&&lettersDone<6;           /* first few letters show the whole path, then it speeds up */
+    await advance(slow);
+    if(!job.running)break;
+    await new Promise(r=>job.timer=setTimeout(r,fast?18:(slow?380:70)));
+  }
+  if(job.i>=job.steps.length)complete();
+  job.running=false;controls();
+}
+function stop(){job.running=false;clearTimeout(job.timer);controls()}
+function finishNow(){
+  stop();
+  while(job.i<job.steps.length){const s=job.steps[job.i];if(s.path){reveal(job.i,false);}job.i++}
+  const last=[...job.steps].reverse().find(s=>s.path);
+  if(last){showPath(last.path,10);caption(last);setWindows(last.win)}
+  light(null);updateCounter();complete();controls();
+}
+function complete(){
+  light(null);
+  if(!job.key)return;
+  const was=cracked.has(job.key);cracked.add(job.key);store.set("vle.cracked",[...cracked]);
+  const before=rankFor(was?cracked.size:cracked.size-1).name,after=rankFor(cracked.size).name;
+  if(!was){
+    $("slamsub").textContent=after!==before?"Promoted: "+after:(cracked.size+" of "+total()+" talks");
+    const sl=$("slam");sl.classList.remove("show");void sl.offsetWidth;sl.classList.add("show");
+  }
+  draw();
+}
 
+/* ---------- Ranks ---------- */
+const RANKS=[[0,"Recruit"],[1,"Wireless operator"],[3,"Cryptanalyst"],[6,"Senior codebreaker"],[10,"Head of Hut 6"]];
+function total(){return uniqueRows().length}
+function rankFor(n){
+  const t=total();let r={name:"Recruit",next:null};
+  for(let i=0;i<RANKS.length;i++){if(n>=RANKS[i][0])r={name:RANKS[i][1],next:RANKS[i+1]||null}}
+  if(t&&n>=t)r={name:"Hut 6 legend",next:null};
+  return r;
+}
+function updateScore(){
+  const t=total(),n=[...uniqueRows()].filter(x=>cracked.has(x.p)).length,r=rankFor(n);
+  $("rank").textContent=r.name;$("count").textContent=n+" of "+t+" talks cracked";
+  $("barfill").style.width=(t?Math.round(n/t*100):0)+"%";
+  $("nextrank").textContent=n>=t&&t?"Every intercept on the board is cracked. New ones arrive every minute.":
+    (r.next?"Crack "+(Math.max(r.next[0],0)-n)+" more for "+r.next[1]+".":"Crack all "+t+" to become Hut 6 legend.");
+  $("gonext").hidden=!(n<t);
+}
+
+/* ---------- Intercepts ---------- */
 const API="https://devfest-vibe-lounge.web.app/api";
-const seen=new Map();
+const seen=new Map(),fresh=new Set();
 TX.forEach(([n,s,c])=>seen.set(n,{n,s,c}));
-const log=$("log");
+function uniqueRows(){
+  const rows=[...seen.values()].map(x=>({...x,p:decrypt(x.c,x.s)}));
+  const uniq=new Map();rows.sort((a,b)=>+b.n-+a.n).forEach(x=>{if(!uniq.has(x.p))uniq.set(x.p,x)});
+  return [...uniq.values()].sort((a,b)=>a.p.slice(0,5).localeCompare(b.p.slice(0,5))||a.p.localeCompare(b.p));
+}
 function draw(){
-  const rows=[...seen.values()].map(x=>({...x,p:enigma(x.c,x.s).out}));
-  const uniq=new Map();[...rows].sort((a,b)=>+b.n-+a.n).forEach(x=>{if(!uniq.has(x.p))uniq.set(x.p,x)});
-  const list=[...uniq.values()].sort((a,b)=>a.p.slice(0,5).localeCompare(b.p.slice(0,5))||a.p.localeCompare(b.p));
-  log.replaceChildren();
+  const list=uniqueRows(),log=$("log");log.replaceChildren();
+  let hinted=false;
   list.forEach(x=>{
-    const m=x.p.match(/^(\d\d:\d\d) ([^:]+): (.*)$/);
-    const el=document.createElement("button");el.className="tx";el.type="button";
-    el.innerHTML='<div class="time"></div><div class="meta"></div><div class="plain"></div><div class="cipher"></div>';
-    el.querySelector(".time").textContent=m?m[1]:"—";
-    const meta=el.querySelector(".meta"),room=document.createElement("span");
-    room.className="room";room.textContent=m?m[2]:"";
+    const ok=cracked.has(x.p),m=x.p.match(/^(\d\d:\d\d) ([^:]+): (.*)$/),cm=x.c.match(/^(\d\d:\d\d) ([^:]+): (.*)$/);
+    const el=document.createElement("button");el.type="button";
+    el.className="tx "+(ok?"cracked":"sealed")+(job.key===x.p?" current":"");
+    const time=document.createElement("div");time.className="time";time.textContent=(m||cm)?(m||cm)[1]:"—";
+    const meta=document.createElement("div");meta.className="meta";
+    const room=document.createElement("span");room.className="room";room.textContent=ok&&m?m[2]:"Room sealed";
     meta.append(room," · № "+x.n+" · Start "+x.s);
-    el.querySelector(".plain").textContent=m?m[3]:x.p;
-    el.querySelector(".cipher").textContent=x.c;
-    el.setAttribute("aria-label","Load transmission "+x.n+" into the machine");
+    const body=document.createElement("div");body.className="body";body.textContent=ok?(m?m[3]:x.p):(cm?cm[3]:x.c);
+    const cta=document.createElement("span");cta.className="cta";cta.textContent=ok?"✓ Cracked":"Decrypt ▸";
+    el.append(time,meta,body,cta);
+    if(!ok&&!hinted&&cracked.size===0){el.classList.add("hint");const b=document.createElement("span");b.className="badge";b.textContent="Start here";el.append(b);hinted=true}
+    else if(fresh.has(x.n)&&!ok){const b=document.createElement("span");b.className="badge new";b.textContent="New";el.append(b)}
+    el.setAttribute("aria-label",(ok?"Replay ":"Decrypt ")+"intercept "+x.n);
     el.addEventListener("click",()=>{
-      [...x.s].forEach((c,i)=>rs[i].value=c);$("cin").value=x.c;grow();$("headno").textContent="№ "+x.n;
-      window.scrollTo({top:0,behavior:reduce?"auto":"smooth"});render(true);
+      load(x.c,x.s,x.p,x.n);draw();
+      $("machine").scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"});
+      setTimeout(play,reduce?0:450);
     });
     log.append(el);
   });
+  updateScore();
 }
-function setFeed(live,text){
-  const f=$("feed"),d=document.createElement("span");d.className="dot"+(live?" live":"");f.replaceChildren(d,text);
-}
+function nextSealed(){return uniqueRows().find(x=>!cracked.has(x.p))}
+function setFeed(live,text){const f=$("feed"),d=document.createElement("span");d.className="dot"+(live?" live":"");f.replaceChildren(d,text)}
 async function poll(){
   try{
     const r=await fetch(API+"/transmissions",{cache:"no-store",credentials:"omit",referrerPolicy:"no-referrer"});
@@ -291,17 +497,45 @@ async function poll(){
     const j=await r.json();
     (Array.isArray(j.transmissions)?j.transmissions:[]).slice(0,50).forEach(t=>{
       if(!t||!Number.isInteger(t.number)||!/^[A-Z]{3}$/.test(t.start)||typeof t.ciphertext!=="string"||t.ciphertext.length>600)return;
-      seen.set(String(t.number),{n:String(t.number),s:t.start,c:t.ciphertext});
+      const n=String(t.number);if(!seen.has(n)&&booted)fresh.add(n);
+      seen.set(n,{n,s:t.start,c:t.ciphertext});
     });
     while(seen.size>300)seen.delete(seen.keys().next().value);
     draw();
     const now=new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
-    setFeed(true,"Receiving live · "+seen.size+" intercepts · last at "+now+". Tap a line to run it through the machine.");
+    setFeed(true,"Receiving live · last at "+now+". A new intercept arrives every minute.");
   }catch(e){
     setFeed(false,"Wireless room silent. Showing intercepts 6336–6345 of 30 Oct 2026.");
   }
+  booted=true;
 }
-draw();grow();render(true);poll();setInterval(poll,60000);
+let booted=false;
+
+/* ---------- Wiring up ---------- */
+$("run").addEventListener("click",()=>job.running?stop():play());
+$("stepbtn").addEventListener("click",async()=>{stop();await advance(true);if(job.i>=job.steps.length)complete();controls()});
+$("finish").addEventListener("click",finishNow);
+$("speed").addEventListener("click",()=>{fast=!fast;$("speed").textContent="Speed: "+(fast?"fast":"normal");$("speed").setAttribute("aria-pressed",String(fast))});
+$("gonext").addEventListener("click",()=>{
+  const x=nextSealed();if(!x)return;
+  load(x.c,x.s,x.p,x.n);draw();$("machine").scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"});setTimeout(play,reduce?0:450);
+});
+rs.forEach((r,i)=>r.addEventListener("input",()=>{r.value=r.value.toUpperCase().replace(/[^A-Z]/g,"");if(r.value&&rs[i+1])rs[i+1].focus();manual()}));
+$("cin").addEventListener("input",manual);
+function manual(){
+  const c=$("cin").value.toUpperCase().slice(0,600),s=startPos();
+  const p=decrypt(c,s);const match=uniqueRows().find(x=>x.p===p);
+  load(c,s,match?match.p:null,match?match.n:null);
+}
+
+const tv=decrypt("HELLO DEVFEST","AAA"),pass=tv==="IABEA NVTNZMA";
+$("selftest").replaceChildren("Machine check · AAA · HELLO DEVFEST → "+tv+" · ",Object.assign(document.createElement("b"),{className:pass?"":"bad",textContent:pass?"verified":"mismatch"}));
+
+draw();
+const first=nextSealed()||uniqueRows()[0];
+if(first)load(first.c,first.s,first.p,first.n);else buildTape([]);
+draw();
+poll();setInterval(poll,60000);
 </script>
 </body>
 </html>
