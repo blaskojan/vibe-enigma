@@ -65,28 +65,29 @@ h1{grid-column:1;font-family:var(--stencil);font-weight:700;font-size:clamp(36px
 /* Machine */
 .machine{background:var(--bakelite);color:#e9dfc8;border-radius:6px;padding:22px 20px 20px;display:grid;gap:20px;
   box-shadow:inset 0 0 0 1px #000,inset 0 2px 0 rgba(255,255,255,.06),0 6px 0 #0d0c0b}
-.mrow{display:flex;flex-wrap:wrap;gap:20px 28px;align-items:flex-end;justify-content:space-between}
+.mrow{display:flex;flex-wrap:wrap;gap:20px 40px;align-items:flex-end}
 .mlabel{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#a99a7c;margin-bottom:8px;display:block}
 .rotors{display:flex;gap:12px}
 .window{width:56px;height:68px;border-radius:6px;background:linear-gradient(#c79d4b,#8e6a2a);padding:5px;box-shadow:0 2px 0 #000}
 .rotor{width:100%;height:100%;border:0;border-radius:3px;text-align:center;font-family:var(--type);font-size:30px;text-transform:uppercase;
   color:var(--ink);background:linear-gradient(#f3ead6 0%,#e4d6b4 45%,#c9b68d 100%);box-shadow:inset 0 3px 6px rgba(0,0,0,.45)}
 .rotor:focus-visible,textarea:focus-visible,.tx:focus-visible{outline:3px solid var(--lamp-on);outline-offset:3px}
-.endpos{font-size:12px;color:#a99a7c;font-variant-numeric:tabular-nums}
-.endpos b{font-family:var(--type);font-weight:400;color:#e9dfc8;font-size:16px;letter-spacing:.2em}
-.lampboard{display:grid;gap:7px;justify-items:center}
+.endpos{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#a99a7c;font-variant-numeric:tabular-nums}
+.endpos b{display:block;font-family:var(--type);font-weight:400;color:#e9dfc8;font-size:20px;letter-spacing:.3em;text-transform:none}
+.lampboard{display:grid;gap:7px;justify-items:start}
 .lrow{display:flex;gap:7px}
+.lrow:nth-child(2){padding-left:calc(clamp(24px,6.4vw,34px)/2 + 3.5px)}
 .lamp{width:clamp(24px,6.4vw,34px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:clamp(11px,2.6vw,14px);
   color:#6b6357;background:radial-gradient(circle at 40% 35%,#4a443c,var(--lamp-off));box-shadow:inset 0 0 0 2px #121110}
 .lamp.on{color:#3b2a00;background:radial-gradient(circle at 45% 40%,#fff6cf,var(--lamp-on) 55%,#e0a12c);box-shadow:inset 0 0 0 2px #7a5413,0 0 18px 4px rgba(255,200,90,.55)}
 .tape{display:grid;gap:14px}
-textarea{width:100%;min-height:92px;resize:vertical;font-family:var(--type);font-size:16px;line-height:1.5;padding:12px 14px;border:0;border-radius:3px;
+textarea{display:block;width:100%;min-height:92px;resize:none;overflow:hidden;font-family:var(--type);font-size:17px;line-height:1.5;padding:12px 14px;border:0;border-radius:3px;
   color:var(--ink);background:var(--paper);text-transform:uppercase;box-shadow:inset 0 2px 5px rgba(0,0,0,.35)}
-.out{font-family:var(--type);font-size:17px;line-height:1.5;padding:12px 14px;min-height:52px;border-radius:3px;background:#f4ecd8;color:var(--ink);
-  white-space:pre-wrap;word-break:break-word;border-left:5px solid var(--stamp)}
+.out{font-family:var(--type);font-size:17px;line-height:1.5;padding:12px 14px;margin:0;min-height:52px;border-radius:3px;background:#f4ecd8;color:var(--ink);
+  white-space:pre-wrap;word-break:break-word;box-shadow:inset 4px 0 0 var(--stamp)}
 .out .caret{display:inline-block;width:.55em;background:var(--ink);animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
-.check{font-size:12px;color:#a99a7c}
+.check{font-size:12px;color:#a99a7c;padding-left:0}
 .check b{color:#9fd3a8;font-weight:400}
 .check b.bad{color:#ff8f80}
 
@@ -125,23 +126,23 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;bo
 
     <div class="fields" aria-label="Machine settings">
       <div class="field"><span>Machine</span><b>Enigma I</b></div>
-      <div class="field"><span>Walzenlage</span><b>I · II · III</b></div>
-      <div class="field"><span>Umkehrwalze</span><b>B</b></div>
-      <div class="field"><span>Ringstellung</span><b>A A A</b></div>
-      <div class="field"><span>Steckerbrett</span><b>DE · VF · ST</b></div>
+      <div class="field"><span>Rotor order</span><b>I · II · III</b></div>
+      <div class="field"><span>Reflector</span><b>B</b></div>
+      <div class="field"><span>Ring settings</span><b>A A A</b></div>
+      <div class="field"><span>Plugboard</span><b>DE · VF · ST</b></div>
     </div>
 
     <section class="machine" aria-label="Decoder">
       <div class="mrow">
         <div>
-          <label class="mlabel" for="r0">Grundstellung · rotor start</label>
+          <label class="mlabel" for="r0">Rotor start</label>
           <div class="rotors">
             <div class="window"><input class="rotor" id="r0" maxlength="1" value="W" aria-label="Left rotor" autocomplete="off"></div>
             <div class="window"><input class="rotor" id="r1" maxlength="1" value="G" aria-label="Middle rotor" autocomplete="off"></div>
             <div class="window"><input class="rotor" id="r2" maxlength="1" value="I" aria-label="Right rotor" autocomplete="off"></div>
           </div>
         </div>
-        <div class="endpos">Rotors after message<br><b id="endpos">———</b></div>
+        <div class="endpos"><span class="mlabel">Rotors after message</span><b id="endpos">———</b></div>
       </div>
 
       <div class="lampboard" id="lampboard" aria-hidden="true"></div>
@@ -237,7 +238,9 @@ function render(animate){
   };tick();
 }
 rs.forEach((r,i)=>r.addEventListener("input",()=>{r.value=r.value.toUpperCase().replace(/[^A-Z]/g,"");if(r.value&&rs[i+1])rs[i+1].focus();render(false)}));
-$("cin").addEventListener("input",()=>render(false));
+function grow(){const t=$("cin");t.style.height="auto";t.style.height=t.scrollHeight+"px"}
+$("cin").addEventListener("input",()=>{grow();render(false)});
+addEventListener("resize",grow);document.fonts&&document.fonts.ready.then(grow);
 
 const t=enigma("HELLO DEVFEST","AAA").out, pass=t==="IABEA NVTNZMA";
 $("selftest").innerHTML='Test vector · AAA · HELLO DEVFEST → '+t+' · <b class="'+(pass?'':'bad')+'">'+(pass?'verified':'mismatch')+'</b>';
@@ -256,13 +259,13 @@ function draw(){
     const el=document.createElement("button");el.className="tx";el.type="button";
     el.innerHTML='<div class="time"></div><div class="meta"></div><div class="plain"></div><div class="cipher"></div>';
     el.querySelector(".time").textContent=m?m[1]:"—";
-    el.querySelector(".meta").innerHTML='<span class="room"></span> · № '+x.n+' · Grundstellung '+x.s;
+    el.querySelector(".meta").innerHTML='<span class="room"></span> · № '+x.n+' · Start '+x.s;
     el.querySelector(".room").textContent=m?m[2]:"";
     el.querySelector(".plain").textContent=m?m[3]:x.p;
     el.querySelector(".cipher").textContent=x.c;
     el.setAttribute("aria-label","Load transmission "+x.n+" into the machine");
     el.addEventListener("click",()=>{
-      [...x.s].forEach((c,i)=>rs[i].value=c);$("cin").value=x.c;$("headno").textContent="№ "+x.n;
+      [...x.s].forEach((c,i)=>rs[i].value=c);$("cin").value=x.c;grow();$("headno").textContent="№ "+x.n;
       window.scrollTo({top:0,behavior:reduce?"auto":"smooth"});render(true);
     });
     log.append(el);
@@ -281,7 +284,7 @@ async function poll(){
     $("feed").innerHTML='<span class="dot"></span>Wireless room silent ('+e.message+'). Showing intercepts 6336–6345 of 30 Oct 2026.';
   }
 }
-draw();render(true);poll();setInterval(poll,60000);
+draw();grow();render(true);poll();setInterval(poll,60000);
 </script>
 </body>
 </html>
